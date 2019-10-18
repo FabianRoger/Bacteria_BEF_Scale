@@ -1,0 +1,501 @@
+---
+title: "Data Analysis - third Experiment"
+output: html_notebook
+---
+
+notes:
+
++ take deep dive into Thompsom paper
++ check overyielding result
+
+```{r, message=FALSE}
+library(here)
+library(dplyr)
+library(tidyr)
+library(broom)
+library(forcats)
+library(readr)
+library(ggplot2)
+library(RColorBrewer)
+library(purrr)
+```
+
+## read data
+
+We have data from 11 plates, 4 different antibiotics in duplicates and three control plates. 
+
+We have the following antibiotics:
+
++ Chloramphenicol (Cam)
++ Kanamycin A (Kan)
++ Tetracycline (Tet)
++ Trimethoprim (Trim)
+
+```{r, message=FALSE, warning=FALSE}
+
+Files <- list.files(here("Data", "Results_Exp3"), pattern = ".csv")
+
+File_list <- 
+lapply(Files, function(x) {
+  temp <- read_csv(here("Data", "Results_Exp3", x))
+  name <- sub("^.+_(\\w+\\d)_.+","\\1", x)
+  Name <- paste(toupper(substr(name,1,1)), substr(name,2,nchar(name)), sep ="")
+  tempm <- mutate(temp,
+                  Plate = Name,
+                  Antibiotic = gsub("([a-zA-Z]+).+", "\\1", Name),
+                  Replicate = substr(Name, nchar(Name), nchar(Name)))
+  })
+
+```
+
+example of aggar plate with bacterial colonies - each dot represents a unique species combination
+
+![example Plate](Plate_example.jpg)
+
+Each large plate has 1536 spots, corresponding to 12 replicated 96-Well plates with a control plate on every 4th position. 
+
+The position of the strain combinations on each 96-well plate is identical and as follows:
+
+![Strain positions](positions_96_plate.jpg)
+
+We are interested in two response variables from the raw data:
+
++ growth yield (mainly)
++ generation time (maybe)
+
+## clean data
+
++ bind all dataframes together to one long dataframe
++ exclude unecessary varibales
++ rename variables
++ change type to numeric
++ backtransform Growth Yield from log2 to linear scale
++ filter spots with control strain ("ATCC") as data are allready normalized
++ add column with richness of species combination
+
+```{r}
+
+Data <-  do.call("rbind", File_list)
+
+Data <- 
+Data %>% 
+  select(Plate, Antibiotic, Replicate,
+         Row, Column, gene, 
+         Phenotypes.ExperimentGrowthYield,
+         Phenotypes.GenerationTime) %>% 
+  rename(GrowthYield = Phenotypes.ExperimentGrowthYield) %>% 
+  mutate(GrowthYield = as.numeric(GrowthYield)) %>% 
+  rename(GenTime = Phenotypes.GenerationTime) %>% 
+  mutate(GenTime = as.numeric(GenTime)) %>% 
+  mutate(Replicate = as.character(Replicate)) %>% 
+  mutate(withinPlateRep = gsub("\\w+\\.(\\d)", "\\1", gene)) %>% 
+  mutate(gene = gsub("(\\w+)\\.\\d", "\\1", gene)) %>% 
+  mutate(Antibiotic = fct_relevel(Antibiotic, "Con", after = Inf)) %>% 
+  filter(!grepl("ATCC", gene)) %>%
+  filter(!grepl("control", gene)) %>% 
+  mutate(Richness = nchar(gene)) 
+  
+```
+
+## check for block effects
+
+```{r}
+
+lm(GrowthYield ~ gene*Antibiotic + withinPlateRep, data = Data) %>% 
+  tidy()
+
+```
+
+
+
+## exploratory graphs
+
++ growth compared to control
+
+```{r}
+Data %>% 
+  filter(Richness ==1) %>% 
+  ggplot(aes(x = Antibiotic, y = GrowthYield, colour = gene))+
+  geom_point(position = position_dodge(width = 0.5), alpha = 0.3)+
+  scale_color_brewer(palette = "Set1")+
+  geom_hline(yintercept = mean(Data[Data$Antibiotic == "Con", ]$GrowthYield), 
+             linetype = "dashed", colour = "darkgrey")+
+  scale_y_log10()+
+  theme_bw()
+
+#ggsave("monoculture_performace_norm.pdf", height = 4, width = 8)
+```
+
+
++ growth by Strain and environment
+
+```{r}
+Data %>% 
+  filter(Richness ==1) %>% 
+  ggplot(aes(x = gene, y = GrowthYield, colour = Replicate, shape = withinPlateRep))+
+  #ggplot(aes(x = gene, y = GenTime, colour = Replicate, shape = withinPlateRep))+
+  geom_point(position = position_dodge(width = 0.6), alpha = 0.3)+
+  facet_wrap(~Antibiotic)+
+  scale_color_brewer(palette = "Set1")+
+  scale_y_log10()+
+  theme_bw()
+
+#ggsave("monoculture_performace_panel_norm.pdf", height = 4, width = 6)
+```
+
+
+
++ growth by richness and environment
+
+```{r}
+
+Data %>% 
+  #filter(Richness %in% c(1,5)) %>% 
+  #filter(!grepl("a", gene)) %>% 
+  ggplot(aes(x = Richness, y = GrowthYield))+
+  #ggplot(aes(x = Richness, y = GenTime))+
+  geom_point(position = position_jitter(width = 0.1, height = 0), 
+             alpha = 0.2, size = 0.2, colour = "#377EB8")+
+  stat_smooth(method = "lm", se = F, colour = "#E41A1C", size = 0.4)+
+  facet_wrap(~Antibiotic, scales = "free_y")+
+  scale_color_brewer(palette = "Set1")+
+  theme_bw()
+
+#ggsave("BEF_by_Env_norm.pdf", height = 4, width = 6)
+
+```
+
++ check for combinations with given strain
+
+```{r, warning=FALSE}
+
+strain <- letters[1:6][-2]
+
+for(i in seq_along(strain)){
+  
+g <-   Data %>% 
+  mutate(has_strain = grepl(strain[i], gene)) %>% 
+  ggplot(aes(x = Richness, y = GrowthYield, colour = has_strain))+
+  geom_point(position = position_jitterdodge(jitter.width = 0.1, jitter.height = 0, dodge.width = 0.5), 
+             alpha = 1, size = 0.4)+
+  stat_smooth(method = "lm", se = F, colour = "#E41A1C", size = 0.4)+
+  facet_wrap(~Antibiotic, scales = "free")+
+  scale_color_manual(values = c("grey", "#4DAF4A"))+
+  theme_bw()+
+  labs(title = paste("strain", strain[i], sep = " "))
+
+#ggsave(paste("strain", strain[i], "norm_.pdf", sep = "_"), height = 4, width = 7)
+
+print(g)
+  
+}
+
+```
+
+
+```{r}
+
+Data_mono <- 
+  Data %>%
+  filter(Richness == 1) %>% 
+  group_by(Antibiotic, gene) %>% 
+  summarize(mean_Yield = mean(GrowthYield, na.rm = T),
+            median_Yield = median(GrowthYield, na.rm = T))
+
+Data_poly <-
+  Data %>% 
+  filter(Richness > 1)
+
+spec_comb <- sapply(2:5, function(x) combn(letters[1:6][-2], x))
+env <- unique(as.character(Data$Antibiotic))
+
+res <- lapply(spec_comb, function(x){ # for each richness level
+  apply(x, 2, function(y){ # for each species combination
+    lapply(as.list(env), function(z){ # for each environment
+      
+      expected <- Data_mono[Data_mono$Antibiotic == z & 
+                         Data_mono$gene %in% y,]$mean_Yield
+      
+      tibble(Antibiotic = z,
+             gene = paste0(y, collapse = ""),
+             expected_mean = mean(expected),
+             expected_max = max(expected),
+             expected_wmean = mean(sum(expected^2)/abs(sum(expected))))
+      
+    })
+  })
+})
+
+
+Expected <- 
+  unlist(res, recursive = F) %>%
+  unlist(recursive = F) %>%
+  bind_rows()
+
+Data_poly <- 
+Data_poly %>% 
+  left_join(Expected) %>% 
+  mutate(Average =  GrowthYield - expected_mean,
+         Dominance = GrowthYield - expected_max,
+         Weighted = GrowthYield - expected_wmean) %>% 
+  mutate(Antibiotic = factor(Antibiotic)) %>% 
+  mutate(Antibiotic = fct_relevel(Antibiotic, "Con", after = Inf)) 
+```
+
+
+```{r}
+ggplot(Data_poly, aes(x = Richness, y = Average))+
+  geom_point(position = position_jitter(width = 0.1, height = 0),
+             size = 0.4, 
+             alpha = 0.2,
+             colour = "#377EB8")+
+  geom_abline(slope = 0, colour = "#E41A1C")+
+  facet_wrap(~Antibiotic)+
+  theme_bw()+
+  ggtitle("overyielding")
+
+ggplot(Data_poly, aes(x = Richness, y = Weighted))+
+  geom_point(position = position_jitter(width = 0.1, height = 0),
+             size = 0.4, 
+             alpha = 0.2,
+             colour = "#377EB8")+
+  geom_abline(slope = 0, colour = "#E41A1C")+
+  facet_wrap(~Antibiotic)+
+  theme_bw()+
+  ggtitle("overyielding weighted")
+
+ggplot(Data_poly, aes(x = Richness, y = Dominance))+
+  geom_point(position = position_jitter(width = 0.1, height = 0),
+             size = 0.4, 
+             alpha = 0.2,
+             colour = "#377EB8")+
+  geom_abline(slope = 0, colour = "#E41A1C")+
+  facet_wrap(~Antibiotic)+
+  theme_bw()+
+  ggtitle("transgressive overyielding")
+
+Data_poly %>% 
+  select(Antibiotic, Richness, Average, Dominance, Weighted) %>% 
+  gather(type, value, -Richness, -Antibiotic) %>%
+  mutate(type = fct_relevel(type, "weighted", after = 1)) %>% 
+  ggplot(aes(x = as.factor(Richness), y = value, colour = type))+
+  geom_point(position = position_jitterdodge(jitter.height = 0, jitter.width = 0.2),
+             size = 0.4, 
+             alpha = 1)+
+  geom_abline(slope = 0)+
+  facet_wrap(~Antibiotic, scales = "free")+
+  theme_bw()+
+  scale_color_brewer(palette = "Set1")
+  
+
+```
+
+
+#extract slopes for all scales 
+
+here we calculate the slope between richness and functioning for all combinations of environments
+
+```{r, warning=FALSE}
+
+Data_wide <- 
+  select(Data, Richness, gene, Antibiotic, GrowthYield) %>% 
+  filter(Antibiotic != "Con") %>% 
+  group_by(Richness, gene, Antibiotic) %>% 
+  mutate(rep = 1:n()) %>% 
+  spread(Antibiotic, GrowthYield)
+
+ab <- c("Cam" , "Kan", "Tet", "Trim")
+ab_comb <- sapply(1:length(ab), function(x) combn(ab, x))
+
+specnum <- length(unique(Data_mono$gene))
+
+env_values <- 
+lapply(ab_comb, function(x) {
+  apply(x, 2, function(y) {
+   
+     df <- data.frame(
+       env_comb = paste0(y, collapse = " "),
+       envnum = length(y),
+       richness = Data_wide$Richness,
+       gene = Data_wide$gene,
+       replicate = Data_wide$rep,
+       functioning = rowMeans(Data_wide[,y])
+                     )
+  })
+  })
+
+env_values <- bind_rows(unlist(env_values, recursive = FALSE))
+
+env_metrics <- 
+  env_values %>% 
+  group_by(env_comb, envnum) %>%
+  nest() %>% 
+  mutate(linear_fit = map(data, ~lm(functioning ~ richness, data = .))) %>%
+  mutate(linear_fit = map_dbl(linear_fit, function(x) coef(x)[2])) %>% 
+  mutate(power_fit = map(data, ~lm(log(functioning) ~ log(richness), data = .))) %>% 
+  mutate(power_fit = map_dbl(power_fit, function(x) coef(x)[2])) %>% 
+   mutate(overyield = map_dbl(data, function(x) {
+     mean(x[x$richness == specnum,]$functioning, na.rm = T) / 
+       mean(x[x$richness == 1,]$functioning, na.rm = T)})) %>% 
+  mutate(transgressive = map_dbl(data, function(x) {
+    x %>% 
+      group_by(gene) %>% 
+      filter(richness == c(1, specnum)) %>% 
+      summarise(functioning = mean(functioning, na.rm = T), richness = unique(richness)) %>% 
+      group_by(richness) %>% 
+      summarise(functioning = max(functioning, na.rm = T)) %>% 
+      {.[.$richness == specnum,]$functioning /
+          .[.$richness == 1,]$functioning}
+    })) %>%
+  mutate(transgressive = (transgressive-1)*100) %>% 
+  {.}
+  
+
+
+```
+
+```{r}
+
+ggplot(env_values, aes(x = as.factor(richness), y = functioning, colour = as.factor(envnum)))+
+  geom_point(position = position_dodge(width = 0.7), size = 0.7, alpha = 0.5)+
+  geom_smooth(method = "lm", aes(group = as.factor(envnum)), se = F, position = position_dodge(width = 0.7), size= 0.5)+
+  scale_color_brewer(palette = "Set1")+
+  theme_bw()
+
+env_values %>% 
+  group_by(envnum) %>% 
+  mutate(group = as.numeric(as.factor(env_comb))) %>% 
+  ggplot(aes(x = as.factor(richness), y = functioning, 
+             colour = as.factor(group)))+
+  geom_point(aes(group = group), 
+             position = position_jitterdodge(dodge.width = 0.7, jitter.width = 0.3), 
+             size = 0.2, alpha = 0.5)+
+  geom_smooth(method = "lm", aes(group = env_comb),
+              se = F, position = position_dodge(width = 0.7),
+              size= 0.5, alpha = 0.7, linetype = "dashed")+
+  geom_smooth(method = "lm", aes(group = as.factor(envnum)), 
+              se = F, position = position_dodge(width = 0.7), 
+              colour = brewer.pal(11,"RdYlGn")[1])+
+  facet_wrap(~envnum)+
+  scale_colour_manual(values = c(brewer.pal(9,"Blues")[9:3]))+
+  theme_bw()+
+  theme(legend.position = "none")
+  
+
+  
+```
+
+```{r}
+  env_values %>% 
+  na.omit() %>% 
+  group_by(envnum) %>%
+  nest() %>% 
+  mutate(power_fit = map(data, ~lm(log(functioning) ~ log(richness), data = .))) %>% 
+  mutate(power_fit = map(power_fit, augment)) %>% 
+  unnest %>% 
+  ggplot(aes(x = as.factor(richness), y = functioning, colour = as.factor(envnum)))+
+  geom_point(position = position_dodge(width = 0.7), size = 0.7, alpha = 0.5)+
+  scale_color_brewer(palette = "Set1")+
+  geom_line(aes(x = as.factor(richness),y = exp(.fitted), colour = as.factor(envnum), group = envnum),
+            position = position_dodge(width = 0.7))+
+  theme_bw()
+  
+```
+
+```{r}
+d <- tibble(linear_fit = c(-0.2,0.2),
+            overyield = c(-20, 20),
+            power_fit = c(-0.2,0.2),
+            transgressive = c(-50, 50)) %>% 
+  gather(metric, value)
+
+env_metrics %>% 
+  select(-data) %>% 
+  gather(metric, value, -envnum, -env_comb) %>% 
+  ggplot(aes(x = envnum, y = value))+
+  geom_point(position = position_jitter(width = 0.1), fill = "dodgerblue3", size = 2, shape = 21, alpha = 0.7)+
+  facet_wrap(~metric, scales = "free_y")+
+  stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
+  theme_bw()+
+  labs(x = "number of environments")
+
+ggsave(here("figures", "slopes_by_N_Env_norm.pdf"), width = 6, height = 5)
+  
+```
+
+
+# predicted vs observed
+
+```{r}
+Traits <- Data_mono %>% 
+  select(-median_Yield) %>% 
+  spread(gene, mean_Yield)
+
+row_n <- Traits$Antibiotic
+
+Traits <- as.matrix(Traits[,-1])
+dimnames(Traits) <- list(paste("Environment", 1:envnum, sep= "_"),
+                         paste("strain", 1:specnum, sep="_"))
+```
+
+
+
+```{r}
+
+spec <- as.character(unique(Data_mono$gene))
+spec_num <- length(spec)
+spec_comb <- sapply(c(1:spec_num), function(x) combn(spec, x)) 
+
+# choose scenario
+
+# 1 = Dominance
+# 2 = Mean
+# 3 = Weighted mean
+# 4 = percentage transgressive overyielding
+
+
+Scenario <- 1
+
+plot_values <- sapply(antiB, #for each environment
+                      function(x) {
+                        lapply(spec_comb, #for each richness level
+                               function(y) {
+                                 apply(y, 2, function(z){ #for each species combination
+                                   if(Scenario == 1){
+                                     max(Traits[x,z])
+                                     } else if(Scenario == 2){
+                                     mean(Traits[x,z])
+                                       } else {
+                                         weighted.mean(Traits[x,z], 
+                                                 weights = Traits[x,z] / sum(Traits[x,z]))
+                                       } 
+                                   }
+                                   )
+                                 }
+                               )
+                        }
+                      )
+
+
+plot_values_df <- 
+  tibble(
+    richness = rep( rep(1:specnum, unlist(lapply(spec_comb, ncol))), antiBnum),
+    spec_comb = rep(lapply(spec_comb, 
+                           function(x) apply(x, 2, function(y) 
+                             paste(y, collapse = " "))) %>% unlist(),
+                    antiBnum),
+    environment = rep(antiB, each = sum(choose(specnum,1:specnum))),
+    functioning = unlist(plot_values)
+    )
+
+```
+
+```{r}
+ggplot(plot_values_df, aes(x = richness, y = functioning, colour = environment))+
+   geom_point(position = position_dodge(width = 0.3))+
+  geom_smooth(method = "lm", se = F, position = position_dodge(width = 0.3))+
+    scale_colour_brewer(palette = "Set1")+
+    theme_bw()
+
+```
+
