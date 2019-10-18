@@ -5,3 +5,4 @@
 *.html
 *.jpg
 */
+.DS_Store
