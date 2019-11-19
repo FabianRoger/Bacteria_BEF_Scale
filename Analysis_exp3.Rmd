@@ -299,12 +299,12 @@ here we calculate the slope between richness and functioning for all combination
 
 Data_wide <- 
   select(Data, Richness, gene, Antibiotic, GrowthYield) %>% 
-  filter(Antibiotic != "Con") %>% 
+ # filter(Antibiotic != "Con") %>% 
   group_by(Richness, gene, Antibiotic) %>% 
   mutate(rep = 1:n()) %>% 
   spread(Antibiotic, GrowthYield)
 
-ab <- c("Cam" , "Kan", "Tet", "Trim")
+ab <- c("Cam" , "Kan", "Tet", "Trim", "Con")
 ab_comb <- sapply(1:length(ab), function(x) combn(ab, x))
 
 specnum <- length(unique(Data_mono$gene))
@@ -377,7 +377,7 @@ env_values %>%
               se = F, position = position_dodge(width = 0.7), 
               colour = brewer.pal(11,"RdYlGn")[1])+
   facet_wrap(~envnum)+
-  scale_colour_manual(values = c(brewer.pal(9,"Blues")[9:3]))+
+  #scale_colour_manual(values = c(brewer.pal(9,"Blues")[9:3]))+
   theme_bw()+
   theme(legend.position = "none")
   
@@ -496,6 +496,69 @@ ggplot(plot_values_df, aes(x = richness, y = functioning, colour = environment))
   geom_smooth(method = "lm", se = F, position = position_dodge(width = 0.3))+
     scale_colour_brewer(palette = "Set1")+
     theme_bw()
+
+```
+
+
+
+
+######
+
+```{r}
+
+ab <- c("Cam" , "Kan", "Tet", "Trim", "Con")
+ab_comb <- sapply(1:length(ab), function(x) combn(ab, x))
+
+specnum <- length(unique(Data_mono$gene))
+
+env_values <- 
+lapply(ab_comb, function(x) {
+  apply(x, 2, function(y) {
+   
+     df <- data.frame(
+       env_comb = paste0(y, collapse = " "),
+       envnum = length(y),
+       richness = Data_wide$Richness,
+       gene = Data_wide$gene,
+       replicate = Data_wide$rep,
+       functioning = rowMeans(Data_wide[,y])
+                     )
+  })
+  })
+
+env_values <- bind_rows(unlist(env_values, recursive = FALSE))
+
+env_metrics <- 
+  env_values %>% 
+  group_by(env_comb, envnum) %>%
+  nest() %>% 
+  mutate(linear_fit = map(data, ~lm(functioning ~ richness, data = .))) %>%
+  mutate(linear_fit = map_dbl(linear_fit, function(x) coef(x)[2])) %>% 
+  mutate(power_fit = map(data, ~lm(log(functioning) ~ log(richness), data = .))) %>% 
+  mutate(power_fit = map_dbl(power_fit, function(x) coef(x)[2])) %>% 
+   mutate(overyield = map_dbl(data, function(x) {
+     mean(x[x$richness == specnum,]$functioning, na.rm = T) / 
+       mean(x[x$richness == 1,]$functioning, na.rm = T)})) %>% 
+  mutate(transgressive = map_dbl(data, function(x) {
+    x %>% 
+      group_by(gene) %>% 
+      filter(richness == c(1, specnum)) %>% 
+      summarise(functioning = mean(functioning, na.rm = T), richness = unique(richness)) %>% 
+      group_by(richness) %>% 
+      summarise(functioning = max(functioning, na.rm = T)) %>% 
+      {.[.$richness == specnum,]$functioning /
+          .[.$richness == 1,]$functioning}
+    })) %>%
+  mutate(transgressive = (transgressive-1)*100) %>% 
+  {.}
+
+
+ab2 <- expand.grid(ab,ab,ab) 
+
+##### does what I want ###
+gtools::combinations(length(ab), 5, ab, repeats.allowed=TRUE)
+
+  
 
 ```
 
