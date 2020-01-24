@@ -428,7 +428,7 @@ env_values %>%
   geom_smooth(method = "lm", aes(group = as.factor(envnum)), 
               se = F, position = position_dodge(width = 0.7), 
               colour = brewer.pal(11,"RdYlGn")[1])+
-  facet_wrap(~envnum)+
+  facet_wrap(~envnum,scales = "free")+
   #scale_colour_manual(values = c(brewer.pal(9,"Blues")[9:3]))+
   theme_bw()+
   theme(legend.position = "none")
@@ -605,10 +605,13 @@ env_metrics <-
   {.}
 
 
-ab2 <- expand.grid(ab,ab,ab) 
+ab2 <- expand.grid("a","b","c","d","e") 
 
 ##### does what I want ###
-gtools::combinations(length(ab), 5, ab, repeats.allowed=TRUE)
+gtools::combinations(length(ab), 5, ab, repeats.allowed=TRUE) %>% 
+  apply(1, table) #%>% 
+  bind_rows() #%>% 
+  vegan::renyi(., scales = 1, hill = T)
 
   
 
