@@ -11,13 +11,13 @@ library(purrr)
 library(ggplot2)
 library(broom)
 #library(raster) (for now only needed for last visualization)
-
+library(akima)
 ```
 
-+ We want to simulate 6 strains of Bacteria, growing on 4 different antibiotics. 
++ We want to simulate 5 strains of Bacteria, growing on 4 different antibiotics & the control. 
 + Each Strain differs in it's ability to grow on each antibiotic
-+ We grow the bacteria in every possible combination (monocultures and all possibel 2 to 6 species mixtures)
-+ We grow them on every possible combination of environments (1 antibiotics to 4 antibiotics)
++ We grow the bacteria in every possible combination (monocultures and all possibel 2 to 5 species mixtures)
++ We grow them on every possible combination of environments (1 antibiotics to 4 antibiotics + control)
 + We measure EF at different scales going from 1 to 1000 pixels  
 
   
@@ -27,7 +27,7 @@ define number of species and environments
 ```{r}
 
 specnum <- 5
-envnum <- 4
+envnum <- 5
  
 ```
 
@@ -88,7 +88,7 @@ Traits
 
 # plot values
 
-here we calculate the outcome (biomass / 'functioning') of evry species combination in each environment. We calculate the mixture performance in three differen ways:
+here we calculate the outcome (biomass / 'functioning') of every species combination in each environment. We calculate the mixture performance in three differen ways:
 
 1) **Dominance**: The mixture value equals the perfomance of the best performing species 
 2) **Mean**: The mixture value equals the mean of the performances of all species 
@@ -151,6 +151,26 @@ ggplot(plot_values_df, aes(x = richness, y = functioning, colour = environment))
   geom_smooth(method = "lm", se = F, position = position_dodge(width = 0.4))+
     scale_colour_brewer(palette = "Set1")+
     theme_bw()
+
+plot_values_df %>% 
+  na.omit() %>% 
+  group_by(environment) %>%
+  nest() %>% 
+  mutate(power_fit = map(data, ~lm(log(functioning) ~ log(richness), data = .))) %>% 
+  mutate(power_fit = map(power_fit, augment)) %>% 
+  unnest(cols = c(data, power_fit)) %>% 
+  ggplot(aes(x = richness, y = functioning))+
+  geom_point(position = position_jitter(width = 0.1, height = 0), 
+             alpha = 1, size = 1, colour = "#377EB8")+
+  geom_line(aes(x = richness, y = exp(.fitted)), 
+            colour = "black", size = 1)+
+  geom_ribbon(aes(x = richness, 
+                  ymin = exp(.fitted - 2*.se.fit), 
+                  ymax = exp(.fitted + 2*.se.fit),
+                  group = environment), fill = "grey", alpha = 0.2)+
+  facet_wrap(~environment, scales = "free_y")+
+  theme_bw()
+
 
 ```
 
@@ -215,7 +235,7 @@ env_values %>%
               colour = brewer.pal(11,"RdYlGn")[1],
               size = 0.7)+
   facet_wrap(~envnum)+
-  scale_colour_manual(values = c(brewer.pal(9,"Blues")[9:3]))+
+  #scale_colour_manual(values = c(brewer.pal(9,"Blues")[9:3]))+
   theme_bw()+
   theme(legend.position = "none")
   
@@ -234,18 +254,28 @@ ggplot(env_values, aes(x = as.factor(richness), y = functioning, colour = as.fac
 ```
 
 ```{r}
-  env_values %>% 
-  group_by(envnum) %>%
+
+
+Col <- c(brewer.pal(9, "Greens")[c(5,7,9)], brewer.pal(9, "Blues")[c(5,7,9)])[c(1,4,2,5,3,6)]
+
+env_values %>%
+  group_by(envnum) %>% 
   nest() %>% 
-  mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., start = list(a = 1, b = 1)))) %>% 
+  mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., start = list(a = 1, b = 1)))) %>%  
   mutate(power_fit = map(power_fit, augment)) %>% 
-  unnest %>% 
-  ggplot(aes(x = as.factor(richness), y = functioning, colour = as.factor(envnum)))+
-  geom_point(position = position_dodge(width = 0.7), size = 0.7, alpha = 0.5)+
-  scale_color_brewer(palette = "Set1")+
-  geom_line(aes(x = as.factor(richness),y = .fitted, colour = as.factor(envnum), group = envnum),
-            position = position_dodge(width = 0.7))+
-  theme_bw()
+  unnest(cols = power_fit) %>% 
+  ggplot(aes(x = richness, y = functioning, colour = as.factor(envnum)))+
+  geom_point( size = 1, alpha = 1, position = position_dodge(width = 0.7))+
+  geom_line(aes(y = .fitted, group = envnum), position = position_dodge(width = 0.7))+
+  scale_color_manual(values = Col, name = "number of \nenvironments")+
+  theme_bw()+
+ # scale_y_log10()+
+# scale_x_log10()
+ # ylim(c(0, 6e8))+ #omit two outliers for clarity?
+  labs(y = "average functioning", x = "species richness")+
+  guides(colour = guide_legend(ncol = 3))+
+  theme(legend.position = c(0.85,0.15), 
+        legend.background = element_rect(fill = "transparent"))
   
 ```
 
@@ -275,39 +305,100 @@ env_metrics %>%
 
 
 
-#graph to visualize landscape
-
-```{r, fig.height = 2, fig.width = 2}
-
-pixel <- 20
-
-  r <- raster(ncol = pixel, nrow = pixel, ext = extent(-90, 90, -90, 90))
-  s <- raster(ncol = pixel, nrow = pixel, ext = extent(-90, 90, -90, 90))
-  
-  values(r) <- factor(sample(env, pixel^2, replace = T))
- # values(r) <- sample(c(1:4), pixel^2, replace = T)
-  values(s) <- rnorm(pixel^2, mean = 5, sd = 2)
-  
-  plot(r, 
-       box = FALSE, 
-       axes = FALSE,
-       col = c( "#440154FF","#31688EFF","#35B779FF","#FDE725FF"),
-       legend = T)
-  
-  
-# ratify(r)
-# 
-# focal(r, w = matrix(1, nrow = 3, ncol = 3), fun = mean) %>% ratify()
-# 
-# test_df <- as.data.frame(test_spdf)
-# colnames(test_df) <- c("value", "x", "y")
-```
-
 
 # To-do
 
  + make 'heat map' graph with heterogeneity vs scale filled with e.g. av transgressive overyielding
  + test which scenario fits model best, by correlating expected yield based on mono-culture data with three scenarios (average, weighted average, dominance)
  + 
+ 
+```{r}
 
+# vector of environemnts
+ab <- as.character(unique(plot_values_df$environment))
+
+#vector of all possible environment combinations *including with repeated environments*
+ab_comb <- sapply(1:length(ab), function(x) gtools::combinations(length(ab), x, ab, repeats.allowed=TRUE))
+  # apply(1, table) #%>% 
+  # bind_rows() #%>% 
+  # vegan::renyi(., scales = 1, hill = T)
+
+env_values <- 
+lapply(ab_comb, function(x) { #for all levels of environmental richness (1:5)
+  apply(x, 1, function(y) { #for all combination of environments
+   
+     df <- tibble(
+       env_comb = paste0(y, collapse = " "), # which combination of environemnts
+       envnum = length(y), # what environmental richness
+       envdiv = as.numeric(vegan::renyi(table(y), scales = 1, hill = T)),
+       richness = plot_values_wide$richness, 
+       gene = plot_values_wide$spec_comb,
+       functioning = rowMeans(plot_values_wide[,y]) #mean of functioning across environments
+                     )
+  })
+  })
+
+# expand to dataframe with average function for each 
+# species richness level, 
+# each species combination,
+# and each environmental combination
+
+
+env_values <- bind_rows(unlist(env_values, recursive = FALSE))
+```
+
+
+
+```{r}
+env_metrics <- 
+  env_values %>% 
+  group_by(env_comb, envnum, envdiv) %>%
+  nest() %>% 
+  mutate(linear_fit = map(data, ~lm(functioning ~ richness, data = .))) %>%
+  mutate(linear_fit = map_dbl(linear_fit, function(x) coef(x)[2])) %>% 
+  mutate(log_fit = map(data, ~lm(log(functioning) ~ log(richness), data = .))) %>% 
+  mutate(log_fit = map(log_fit, tidy)) %>% 
+  unnest(log_fit) %>% 
+  select(-std.error, -statistic, -p.value) %>% 
+  spread(term, estimate) %>% 
+  mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., 
+                                    start = list(a = exp(`(Intercept)`) , b = `log(richness)`)))) %>%  
+  mutate(power_fit = map_dbl(power_fit, function(x) coef(x)[2])) %>% 
+   mutate(overyield = map_dbl(data, function(x) {
+     mean(x[x$richness == specnum,]$functioning, na.rm = T) / 
+       mean(x[x$richness == 1,]$functioning, na.rm = T)})) %>% 
+  mutate(transgressive = map_dbl(data, function(x) {
+    x %>% 
+      group_by(gene) %>% 
+      filter(richness %in% c(1, specnum)) %>% 
+      summarise(functioning = mean(functioning, na.rm = T), richness = unique(richness)) %>% 
+      group_by(richness) %>% 
+      summarise(functioning = max(functioning, na.rm = T)) %>% 
+      {.[.$richness == specnum,]$functioning /
+          .[.$richness == 1,]$functioning}
+    })) %>%
+  mutate(transgressive = (transgressive-1)*100) %>% 
+  {.}
+
+res <- 
+env_metrics %>% 
+  group_by(envnum, envdiv) %>%
+  summarise(transgressive = mean(transgressive))
+
+res_int <- akima::interp(res$envnum, res$envdiv, res$transgressive)
+ 
+df <- 
+expand_grid(envnum = res_int$x, envdiv = res_int$y) %>% 
+  as_tibble() %>% 
+  mutate(transgressive = c(t(res_int$z))) %>% 
+  na.omit()
+
+ggplot(df, aes(x = envdiv ,y = envnum , fill = transgressive))+
+  geom_raster()+
+  geom_point(data = res, shape = 22, colour = "red", size = 4)+
+  scale_fill_viridis_c()+
+  theme_bw()
+
+
+```
 
