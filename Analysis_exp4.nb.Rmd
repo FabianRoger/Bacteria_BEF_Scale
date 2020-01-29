@@ -41,6 +41,7 @@ library(readr)
 library(ggplot2)
 library(RColorBrewer)
 library(purrr)
+library(gridExtra)
 ```
 
 ## read data
@@ -261,11 +262,11 @@ plots[[i]] <-
   
 }
 
-plots
 ggsave(file = here("figures", "Fig_S5.pdf"), 
        arrangeGrob(grobs = plots, ncol = 2), 
        width = 16, height = 12 )  ## save plot
 
+plots
 ```
 
 
@@ -414,7 +415,7 @@ plot
 
 Col <- c(brewer.pal(9, "Greens")[c(5,7,9)], brewer.pal(9, "Blues")[c(5,7,9)])[c(1,4,2,5,3,6)]
 
-
+Fig_2_b <- 
 env_values %>%
   group_by(envnum) %>% 
   nest() %>% 
@@ -440,7 +441,9 @@ env_values %>%
   theme(legend.position = c(0.85,0.85), 
         legend.background = element_rect(fill = "transparent"))
 
-  
+save("Fig_2_b", file = here("figures", "Fig_2_b.RData"))
+
+Fig_2_b
 ```
 
 now we calculate 
@@ -502,6 +505,46 @@ ggsave(here("figures", "slopes_by_N_Env_norm.pdf"), width = 6, height = 5)
   
 ```
 
+
+```{r}
+Fig_2_d <- 
+env_metrics %>% 
+  select(-data, -`(Intercept)`, -`log(richness)`) %>% 
+  gather(metric, value, -envnum, -env_comb) %>%
+  filter(metric == "overyield") %>% 
+  ggplot(aes(x = envnum, y = value, colour = as.factor(envnum)))+
+  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1))+
+  stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
+  scale_color_manual(values = Col)+
+  theme_bw()+
+  labs(y = "overyielding", x = "number of environments")+
+  theme(legend.position = "none")
+
+save("Fig_2_d", file = here("figures", "Fig_2_d.RData"))
+
+Fig_2_d
+
+```
+
+```{r}
+Fig_2_f <- 
+env_metrics %>% 
+  select(-data, -`(Intercept)`, -`log(richness)`) %>% 
+  gather(metric, value, -envnum, -env_comb) %>% 
+  filter(metric == "transgressive") %>% 
+  ggplot(aes(x = envnum, y = value, colour = as.factor(envnum)))+
+  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1))+
+  stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
+  scale_color_manual(values = Col)+
+  theme_bw()+
+  labs(y = "transgressive overyielding", x = "number of environments")+
+  theme(legend.position = "none")
+
+save("Fig_2_f", file = here("figures", "Fig_2_f.RData"))
+
+Fig_2_f
+
+```
 
 
 ######
