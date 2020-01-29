@@ -1,0 +1,37 @@
+---
+title: "script to make multipanel figure 2"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(here)
+library(gridExtra)
+```
+
+
+```{r}
+
+load(here("figures", "Fig_2_a.RData"))
+load(here("figures", "Fig_2_b.RData"))
+load(here("figures", "Fig_2_c.RData"))
+load(here("figures", "Fig_2_d.RData"))
+load(here("figures", "Fig_2_e.RData"))
+load(here("figures", "Fig_2_f.RData"))
+
+Fig_2_a <- Fig_2_a +
+  theme(legend.position = "none")
+
+Fig_2_b <- Fig_2_b +
+  theme(legend.position = c(0.7,0.80))
+
+p <- arrangeGrob(Fig_2_a, Fig_2_b,
+             Fig_2_c, Fig_2_d,
+             Fig_2_e, Fig_2_f,
+             ncol = 2)
+
+
+ggsave(plot = p, filename = here("figures", "Fig_2.pdf"), width = 6, height = 9)
+
+```
+
