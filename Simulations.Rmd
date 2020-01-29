@@ -249,7 +249,16 @@ ggplot(env_values, aes(x = as.factor(richness), y = functioning, colour = as.fac
   geom_point(position = position_dodge(width = 0.7), size = 0.7, alpha = 0.5)+
   scale_color_brewer(palette = "Set1")+
   geom_smooth(method = "lm", aes(group = envnum), se = F, position = position_dodge(width = 0.7), size= 0.5)+
-  theme_bw()
+  theme_bw()+
+  scale_color_manual(values = Col, name = "number of \nenvironments")+
+  theme_bw()+
+ # scale_y_log10()+
+# scale_x_log10()
+ # ylim(c(0, 6e8))+ #omit two outliers for clarity?
+  labs(y = "average functioning", x = "species richness")+
+  guides(colour = guide_legend(ncol = 3))+
+  theme(legend.position = c(0.85,0.85), 
+        legend.background = element_rect(fill = "transparent"))
 
 ```
 
@@ -258,6 +267,7 @@ ggplot(env_values, aes(x = as.factor(richness), y = functioning, colour = as.fac
 
 Col <- c(brewer.pal(9, "Greens")[c(5,7,9)], brewer.pal(9, "Blues")[c(5,7,9)])[c(1,4,2,5,3,6)]
 
+Fig_2_a <- 
 env_values %>%
   group_by(envnum) %>% 
   nest() %>% 
@@ -276,7 +286,10 @@ env_values %>%
   guides(colour = guide_legend(ncol = 3))+
   theme(legend.position = c(0.85,0.15), 
         legend.background = element_rect(fill = "transparent"))
-  
+
+save("Fig_2_a", file = here("figures", "Fig_2_a.RData"))
+
+Fig_2_a 
 ```
 
 
@@ -302,8 +315,47 @@ env_metrics %>%
   
 ```
 
+```{r}
+Fig_2_c <- 
+env_metrics %>% 
+  select(-data) %>% 
+  gather(metric, value, -envnum, -env_comb) %>%
+  filter(metric == "overyield") %>% 
+  ggplot(aes(x = envnum, y = value, colour = as.factor(envnum)))+
+  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1))+
+  stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
+  scale_color_manual(values = Col)+
+  theme_bw()+
+  labs(y = "overyielding", x = "number of environments")+
+  theme(legend.position = "none")
+
+save("Fig_2_c", file = here("figures", "Fig_2_c.RData"))
+
+Fig_2_c
+
+```
 
 
+```{r}
+
+Fig_2_e <- 
+env_metrics %>% 
+  select(-data) %>% 
+  gather(metric, value, -envnum, -env_comb) %>% 
+  filter(metric == "transgressive") %>% 
+  ggplot(aes(x = envnum, y = value, colour = as.factor(envnum)))+
+  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1))+
+  stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
+  scale_color_manual(values = Col)+
+  theme_bw()+
+  labs(y = "transgressive overyielding", x = "number of environments")+
+  theme(legend.position = "none")
+
+save("Fig_2_e", file = here("figures", "Fig_2_e.RData"))
+
+Fig_2_e
+
+```
 
 
 # To-do
