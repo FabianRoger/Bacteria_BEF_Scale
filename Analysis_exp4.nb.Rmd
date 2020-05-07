@@ -415,6 +415,15 @@ plot
 
 Col <- c(brewer.pal(9, "Greens")[c(5,7,9)], brewer.pal(9, "Blues")[c(5,7,9)])[c(1,4,2,5,3,6)]
 
+LarsCol <- c(123,63,3,
+             214,123,1,
+             255,124,0,
+             255,168,69,
+             255,210,8) %>% 
+  `/`(265) %>% 
+  matrix(ncol = 3, byrow = TRUE) %>% 
+  rgb()
+
 Fig_2_b <- 
 env_values %>%
   group_by(envnum) %>% 
@@ -431,19 +440,39 @@ env_values %>%
   ggplot(aes(x = richness, y = functioning, colour = as.factor(envnum)))+
   geom_point( size = 1, alpha = 1, position = position_dodge(width = 0.7))+
   geom_line(aes(y = .fitted, group = envnum), position = position_dodge(width = 0.7))+
-  scale_color_manual(values = Col, name = "number of \nenvironments")+
-  theme_bw()+
- # scale_y_log10()+
-# scale_x_log10()
- # ylim(c(0, 6e8))+ #omit two outliers for clarity?
+  scale_color_manual(values = LarsCol, name = "spatial scale")+
+  theme_classic()+
   labs(y = "average functioning", x = "species richness")+
   guides(colour = guide_legend(ncol = 3))+
   theme(legend.position = c(0.85,0.85), 
-        legend.background = element_rect(fill = "transparent"))
+        legend.background = element_rect(fill = "transparent"),
+        axis.ticks.length=unit(-0.25, "cm"),
+        axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
+        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))+
+  #coord_fixed(ratio = 1/2e8)+
+  NULL
 
 save("Fig_2_b", file = here("figures", "Fig_2_b.RData"))
 
 Fig_2_b
+
+#slopes
+
+env_values %>%
+  group_by(envnum) %>% 
+  nest() %>% 
+  mutate(log_fit = map(data, ~lm(log(functioning) ~ log(richness), data = .))) %>% 
+  mutate(log_fit = map(log_fit, tidy)) %>% 
+  unnest(log_fit) %>% 
+  select(-std.error, -statistic, -p.value) %>% 
+  spread(term, estimate) %>% 
+  mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., 
+                                    start = list(a = exp(`(Intercept)`) , b = `log(richness)`)))) %>% 
+  mutate(power_fit = map(power_fit, tidy)) %>% 
+  unnest(cols = power_fit) %>% 
+  filter(term == "b") %>% 
+  select(envnum, estimate, p.value) %>% 
+  mutate_if(is.numeric, round, digits = 3)
 ```
 
 now we calculate 
@@ -477,7 +506,7 @@ env_metrics <-
       {.[.$richness == specnum,]$functioning /
           .[.$richness == 1,]$functioning}
     })) %>%
-  mutate(transgressive = (transgressive-1)*100) %>% 
+ # mutate(transgressive = (transgressive-1)*100) %>% 
   {.}
 
 ```
@@ -513,16 +542,30 @@ env_metrics %>%
   gather(metric, value, -envnum, -env_comb) %>%
   filter(metric == "overyield") %>% 
   ggplot(aes(x = envnum, y = value, colour = as.factor(envnum)))+
-  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1))+
+  geom_point( size = 4, alpha = 1, position = position_jitter(width = 0.1))+
   stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
-  scale_color_manual(values = Col)+
-  theme_bw()+
-  labs(y = "overyielding", x = "number of environments")+
-  theme(legend.position = "none")
+  scale_color_manual(values = LarsCol)+
+  theme_classic()+
+  labs(y = "overyielding", x = "spatial scale")+
+  theme(legend.position = "none",
+        axis.ticks.length=unit(-0.25, "cm"),
+        axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
+        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))+
+  #coord_fixed(ratio = 2)+
+  NULL
+
 
 save("Fig_2_d", file = here("figures", "Fig_2_d.RData"))
 
 Fig_2_d
+
+env_metrics %>% 
+  select(-data) %>% 
+  gather(metric, value, -envnum, -env_comb) %>%
+  filter(metric == "overyield") %>% 
+  lm(value ~ envnum, data = .) %>% 
+  tidy %>% 
+  mutate_if(is.numeric, round, 3)
 
 ```
 
@@ -533,23 +576,37 @@ env_metrics %>%
   gather(metric, value, -envnum, -env_comb) %>% 
   filter(metric == "transgressive") %>% 
   ggplot(aes(x = envnum, y = value, colour = as.factor(envnum)))+
-  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1))+
+  geom_point( size = 4, alpha = 1, position = position_jitter(width = 0.1))+
   stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
-  scale_color_manual(values = Col)+
-  theme_bw()+
-  labs(y = "transgressive overyielding", x = "number of environments")+
-  theme(legend.position = "none")
+  scale_color_manual(values = LarsCol)+
+  theme_classic()+
+  labs(y = "transgressive overyielding", x = "spatial scale")+
+  theme(legend.position = "none",
+        axis.ticks.length=unit(-0.25, "cm"),
+        axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
+        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))+
+  #scale_y_continuous(limits = c(0,NA))+
+  #coord_fixed(ratio = 2/0.4)+
+  NULL
 
 save("Fig_2_f", file = here("figures", "Fig_2_f.RData"))
 
 Fig_2_f
+
+env_metrics %>% 
+  select(-data) %>% 
+  gather(metric, value, -envnum, -env_comb) %>%
+  filter(metric == "transgressive") %>% 
+  lm(value ~ envnum, data = .) %>% 
+  tidy %>% 
+  mutate_if(is.numeric, round, 3)
 
 ```
 
 
 ######
 
-```{r}
+```{r, eval = FALSE}
 
 # vector of environemnts
 ab <- as.character(unique(Data$Antibiotic))
@@ -589,7 +646,7 @@ env_values <- bind_rows(unlist(env_values, recursive = FALSE))
 ```
 
 
-```{r}
+```{r, eval = FALSE}
 env_metrics <- 
   env_values %>% 
   group_by(env_comb, envnum, envdiv) %>%
@@ -640,8 +697,8 @@ ggplot(df, aes(x = envdiv ,y = envnum , fill = transgressive))+
   theme_bw()
 
 
-install.packages("akima")
-library(akima)
+# install.packages("akima")
+# library(akima)
 
 
 ```
