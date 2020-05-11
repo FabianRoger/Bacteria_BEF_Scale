@@ -10,7 +10,7 @@ library(cowplot)
 library(gridExtra)
 ```
 
-
+load figures
 ```{r}
 
 load(here("figures", "Fig_2_a.RData"))
@@ -19,13 +19,40 @@ load(here("figures", "Fig_2_c.RData"))
 load(here("figures", "Fig_2_d.RData"))
 load(here("figures", "Fig_2_e.RData"))
 load(here("figures", "Fig_2_f.RData"))
+```
 
-Fig_2_a <- Fig_2_a +
-  theme(legend.position = "none")
 
-Fig_2_b <- Fig_2_b +
+arrange figures
+```{r}
+Fig_2_a <- 
+Fig_2_a +
+  theme(legend.position = "none")+
+  labs(x = "")+
+  theme(axis.title.y = element_text(vjust = -4) )
+
+
+Fig_2_b <- Fig_2_b+
+  labs(x = "")+
+  theme(axis.title.y = element_text(vjust = -4) )
+  
+Fig_2_c <- Fig_2_c +
   theme(legend.position ="none")+
-  labs(y = "")
+  labs(x = "", y = "transgressive\noveryielding")+
+  theme(axis.title.y = element_text(vjust = -4) )
+
+Fig_2_d <- Fig_2_d+
+  theme(axis.title.y = element_text(vjust = -4),
+        legend.position = "none")+
+  labs(y = paste("production\n(x", expression(1e8), ")", sep = ""))
+
+Fig_2_e <- Fig_2_e +
+  theme(legend.position ="none")+
+  theme(axis.title.y = element_text(vjust = -4) )
+
+Fig_2_f <- Fig_2_f+
+  labs(y = "transgressive\noveryielding")+
+  theme(axis.title.y = element_text(vjust = -4) )
+
 
 legend <- get_legend(
   # create some space to the left of the legend
@@ -35,23 +62,16 @@ legend <- get_legend(
     theme(legend.box.margin = margin(0, 0, 0, 0))
 )
 
-p1 <- plot_grid(Fig_2_a, Fig_2_b)
+p1 <- plot_grid(Fig_2_a, Fig_2_b, Fig_2_c, 
+                Fig_2_d, Fig_2_e, Fig_2_f, 
+                align = "v", labels="AUTO",
+                label_x = 0.1)
+
 p1 <- plot_grid(p1, legend, ncol = 1,  rel_heights = c(1, .1))
-p2 <- plot_grid(Fig_2_c, Fig_2_e, Fig_2_d, Fig_2_f)
-p2 <- plot_grid(p2, legend, ncol = 1,  rel_heights = c(1, .1))
-p3 <- plot_grid(Fig_2_d, Fig_2_f)
-p3 <- plot_grid(p3, legend, ncol = 1,  rel_heights = c(1, .1))
-
-ggsave(plot = p1, filename = here("figures", "Fig_2_r1.pdf"), width = 6, height = 3)
-ggsave(plot = p2, filename = here("figures", "Fig_2_r2.pdf"), width = 6, height = 3)
-ggsave(plot = p3, filename = here("figures", "Fig_2_r3.pdf"), width = 6, height = 3)
-
-
+         
 p1
-p2
-p3
 
-ggsave(plot = p, filename = here("figures", "Fig_2.pdf"), width = 6, height = 9)
+ggsave(plot = p1, filename = here("figures", "Fig_2.pdf"), width = 9, height = 6)
 
 
 ```
