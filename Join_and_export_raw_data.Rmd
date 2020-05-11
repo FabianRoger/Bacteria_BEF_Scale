@@ -1,0 +1,87 @@
+---
+title: "Join and export data"
+output: html_notebook
+---
+
+In this script I join and export the raw data from the experiments. 
+
+We have data from 4 different antibiotics + control conditions (no antibiotics) in triplicates. 
+
+We have the following antibiotics:
+
++ Chloramphenicol (Cam)
++ Kanamycin A (Kan)
++ Tetracycline (Tet)
++ Trimethoprim (Trim)
+
+Each plate comes with a separate result file, store in Batch folders by experiment. 
+The Data for Kan have been repeated and are joined from another batch.
+
+```{r, message=FALSE, warning=FALSE}
+
+path <- here("Data", 
+             "Results_Exp3",
+             "190904_mix5_QC_normalised_absolute_batch")
+
+Files <- list.files(path, pattern = ".csv")
+
+#exclude Kan from experiment 3
+Files <- Files[!grepl("kan8", Files)]
+
+File_list <- 
+lapply(Files, function(x) {
+  temp <- read_csv(paste(path, x, sep = "/"))
+  name <- sub("^.+_(\\w+\\d)_.+","\\1", x)
+  Name <- paste(toupper(substr(name,1,1)), substr(name,2,nchar(name)), sep ="")
+  tempm <- mutate(temp,
+                  Plate = Name,
+                  Antibiotic = gsub("([a-zA-Z]+).+", "\\1", Name),
+                  Replicate = substr(Name, nchar(Name), nchar(Name)))
+  })
+
+# load Kan from experiment 4
+
+path2 <- here("Data", 
+             "Results_Exp4_Kan",
+             "Kan6",
+             "191108_Lars_Kan6_Kan6_Kan6_M9_Jaime.phenotypes.NormalizedAbsoluteBatched")
+
+Files2 <- list.files(path2, pattern = ".csv")
+
+#exclude additional controle (Plate 4)
+Files2 <- Files2[!grepl("plate_4", Files2)]
+
+File_list2 <- 
+lapply(Files2, function(x) {
+  temp <- read_csv(paste(path2, x, sep = "/"))
+  Name <- paste("Kan6", gsub(".+(\\d).csv", "\\1", x), sep = "_")
+  tempm <- mutate(temp,
+                  Plate = Name,
+                  Antibiotic = gsub("([a-zA-Z]+).+", "\\1", Name),
+                  Replicate = substr(Name, nchar(Name), nchar(Name)))
+  })
+
+```
+
+## clean data
+
++ bind all dataframes together to one long dataframe
++ export joined data and uplaod to figshare. 
+
+
+```{r}
+
+Data <-  do.call("rbind", c(File_list, File_list2))
+
+#export Data to upload to Figshare
+write_tsv(Data, here("Data", "Gamfeldt_et_al_Biodiversity_and_EF_across_scale.txt"))
+```
+
+
+These raw data have been reposited to fishare and are citable with the following reference:
+
+> Gamfeldt, Lars; Roger, Fabian; Palm, Martin; Hagan, James; Warringer, Jonas; Farewell, Anne (2020): Biodiversity and ecosystem functioning across gradients in spatial scale. figshare. Dataset. https://doi.org/10.6084/m9.figshare.12279884.v1
+
+
+You can download the data from here: 
+[https://doi.org/10.6084/m9.figshare.12279884.v1](https://doi.org/10.6084/m9.figshare.12279884.v1)
