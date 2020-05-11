@@ -29,8 +29,6 @@ Fig. S4. Production-richness relationships.
 Fig. S5. Highlighting (in green) which strain is included in which combination in each environment.
 
 
-ALSO: push data on Figshare and load from there
-
 ```{r, message=FALSE}
 library(here)
 library(dplyr)
@@ -40,66 +38,25 @@ library(forcats)
 library(readr)
 library(ggplot2)
 library(RColorBrewer)
+library(viridis)
 library(purrr)
 library(gridExtra)
 ```
 
-## read data
+download data 
 
-We have data from 11 plates, 4 different antibiotics in duplicates and three control plates. 
+The data are archived on [Figshare](https://doi.org/10.6084/m9.figshare.12279884.v1)
 
-We have the following antibiotics:
+>Gamfeldt, Lars; Roger, Fabian; Palm, Martin; Hagan, James; Warringer, Jonas; Farewell, Anne (2020): Biodiversity and ecosystem functioning across gradients in spatial scale. figshare. Dataset. https://doi.org/10.6084/m9.figshare.12279884.v1
 
-+ Chloramphenicol (Cam)
-+ Kanamycin A (Kan)
-+ Tetracycline (Tet)
-+ Trimethoprim (Trim)
+Loading the data will throw 10 parsing failures caused by unexpected values in varibales that we do not include in our analysis. These can be safely ignored. 
+```{r}
 
-```{r, message=FALSE, warning=FALSE}
-
-path <- here("Data", 
-             "Results_Exp3",
-             "190904_mix5_QC_normalised_absolute_batch")
-
-Files <- list.files(path, pattern = ".csv")
-
-#exclude Kan from experiment 3
-Files <- Files[!grepl("kan8", Files)]
-
-File_list <- 
-lapply(Files, function(x) {
-  temp <- read_csv(paste(path, x, sep = "/"))
-  name <- sub("^.+_(\\w+\\d)_.+","\\1", x)
-  Name <- paste(toupper(substr(name,1,1)), substr(name,2,nchar(name)), sep ="")
-  tempm <- mutate(temp,
-                  Plate = Name,
-                  Antibiotic = gsub("([a-zA-Z]+).+", "\\1", Name),
-                  Replicate = substr(Name, nchar(Name), nchar(Name)))
-  })
-
-# load Kan from experiment 4
-
-path2 <- here("Data", 
-             "Results_Exp4_Kan",
-             "Kan6",
-             "191108_Lars_Kan6_Kan6_Kan6_M9_Jaime.phenotypes.NormalizedAbsoluteBatched")
-
-Files2 <- list.files(path2, pattern = ".csv")
-
-#exclude additional controle (Plate 4)
-Files2 <- Files2[!grepl("plate_4", Files2)]
-
-File_list2 <- 
-lapply(Files2, function(x) {
-  temp <- read_csv(paste(path2, x, sep = "/"))
-  Name <- paste("Kan6", gsub(".+(\\d).csv", "\\1", x), sep = "_")
-  tempm <- mutate(temp,
-                  Plate = Name,
-                  Antibiotic = gsub("([a-zA-Z]+).+", "\\1", Name),
-                  Replicate = substr(Name, nchar(Name), nchar(Name)))
-  })
+Data <- read_tsv(url("https://ndownloader.figshare.com/files/22626299"))
 
 ```
+
+
 
 example of aggar plate with bacterial colonies - each dot represents a unique species combination
 
@@ -113,22 +70,16 @@ The position of the strain combinations on each 96-well plate is identical and a
 
 We are interested in one response variables from the raw data:
 
-+ growth yield (mainly)
++ growth yield 
 
 ## clean data
-
-+ bind all dataframes together to one long dataframe
 + exclude unecessary varibales
 + rename variables
 + change type to numeric
-+ backtransform Growth Yield from log2 to linear scale            !!!!!!!!!! <- check! Do we need to do that?
 + filter spots with control strain ("ATCC") as data are allready normalized
 + add column with richness of species combination
 
 ```{r}
-
-Data <-  do.call("rbind", c(File_list, File_list2))
-
 Data <- 
 Data %>% 
   select(Plate, Antibiotic, Replicate,
@@ -167,7 +118,7 @@ lm(GrowthYield ~ gene*Antibiotic + withinPlateRep, data = Data) %>%
 
 ## exploratory graphs
 
-### Fig. S3. 
+### Fig. S4. 
 Production of each strain in each environment.
 
 ```{r}
@@ -187,17 +138,18 @@ Data %>%
                aes(group = paste(gene, Antibiotic)))+
   scale_y_log10()+
   theme_bw()+
+  guides(colour = guide_legend(override.aes = list(size = 4, alpha = 1)))+
   #scale_color_viridis_d()
-  scale_color_brewer(palette = "Set1")
-  #scale_color_manual(values = Blues)
+  #scale_color_brewer(palette = "Set1")
+  scale_color_manual(values = viridis(6)[1:5])
 
 geom_pointrange()
 
-ggsave(here("figures", "Fig_S3.pdf"), height = 4, width = 8)
+ggsave(here("figures", "Fig_S4.pdf"), height = 4, width = 8)
 ```
 
 
-### Fig. S4
+### Fig. S3
 
 Production-richness relationships.
 
@@ -223,7 +175,7 @@ Data %>%
   theme_bw()
 
 
-ggsave(here("figures", "Fig_S4.pdf"), height = 4, width = 8)
+ggsave(here("figures", "Fig_S3.pdf"), height = 4, width = 8)
 
 ```
 
@@ -413,18 +365,7 @@ env_values <- bind_rows(unlist(env_values, recursive = FALSE))
 plot 
 ```{r}
 
-Col <- c(brewer.pal(9, "Greens")[c(5,7,9)], brewer.pal(9, "Blues")[c(5,7,9)])[c(1,4,2,5,3,6)]
-
-LarsCol <- c(123,63,3,
-             214,123,1,
-             255,124,0,
-             255,168,69,
-             255,210,8) %>% 
-  `/`(265) %>% 
-  matrix(ncol = 3, byrow = TRUE) %>% 
-  rgb()
-
-Fig_2_b <- 
+Fig_2_d <- 
 env_values %>%
   group_by(envnum) %>% 
   nest() %>% 
@@ -437,12 +378,12 @@ env_values %>%
                                     start = list(a = exp(`(Intercept)`) , b = `log(richness)`)))) %>%  
   mutate(power_fit = map(power_fit, augment)) %>% 
   unnest(cols = power_fit) %>% 
-  ggplot(aes(x = richness, y = functioning, colour = as.factor(envnum)))+
+  ggplot(aes(x = richness, y = functioning/1e8, colour = as.factor(envnum)))+
   geom_point( size = 1, alpha = 1, position = position_dodge(width = 0.7))+
-  geom_line(aes(y = .fitted, group = envnum), position = position_dodge(width = 0.7))+
-  scale_color_manual(values = LarsCol, name = "spatial scale")+
+  geom_line(aes(y = .fitted/1e8, group = envnum), position = position_dodge(width = 0.7))+
+  scale_color_manual(values = viridis(6)[1:5], name = "scale")+
   theme_classic()+
-  labs(y = "average functioning", x = "species richness")+
+  labs(y = paste("production x", expression(1e8)), x = "species richness")+
   guides(colour = guide_legend(ncol = 3))+
   theme(legend.position = c(0.85,0.85), 
         legend.background = element_rect(fill = "transparent"),
@@ -452,10 +393,14 @@ env_values %>%
   #coord_fixed(ratio = 1/2e8)+
   NULL
 
-save("Fig_2_b", file = here("figures", "Fig_2_b.RData"))
+save("Fig_2_d", file = here("figures", "Fig_2_d.RData"))
 
-Fig_2_b
+Fig_2_d
+```
 
+
+statistics
+```{r}
 #slopes
 
 env_values %>%
@@ -512,7 +457,6 @@ env_metrics <-
 ```
 
 
-
 ```{r}
 d <- tibble(linear_fit = c(-0.2,0.2),
             overyield = c(-20, 20),
@@ -536,7 +480,7 @@ ggsave(here("figures", "slopes_by_N_Env_norm.pdf"), width = 6, height = 5)
 
 
 ```{r}
-Fig_2_d <- 
+Fig_2_e <- 
 env_metrics %>% 
   select(-data, -`(Intercept)`, -`log(richness)`) %>% 
   gather(metric, value, -envnum, -env_comb) %>%
@@ -544,9 +488,9 @@ env_metrics %>%
   ggplot(aes(x = envnum, y = value, colour = as.factor(envnum)))+
   geom_point( size = 4, alpha = 1, position = position_jitter(width = 0.1))+
   stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
-  scale_color_manual(values = LarsCol)+
+  scale_color_manual(values = viridis(6)[1:5])+
   theme_classic()+
-  labs(y = "overyielding", x = "spatial scale")+
+  labs(y = "overyielding", x = "scale")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
@@ -555,10 +499,12 @@ env_metrics %>%
   NULL
 
 
-save("Fig_2_d", file = here("figures", "Fig_2_d.RData"))
+save("Fig_2_e", file = here("figures", "Fig_2_e.RData"))
 
-Fig_2_d
+Fig_2_e
+```
 
+```{r}
 env_metrics %>% 
   select(-data) %>% 
   gather(metric, value, -envnum, -env_comb) %>%
@@ -569,6 +515,7 @@ env_metrics %>%
 
 ```
 
+
 ```{r}
 Fig_2_f <- 
 env_metrics %>% 
@@ -578,9 +525,9 @@ env_metrics %>%
   ggplot(aes(x = envnum, y = value, colour = as.factor(envnum)))+
   geom_point( size = 4, alpha = 1, position = position_jitter(width = 0.1))+
   stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
-  scale_color_manual(values = LarsCol)+
+  scale_color_manual(values = viridis(6)[1:5])+
   theme_classic()+
-  labs(y = "transgressive overyielding", x = "spatial scale")+
+  labs(y = "transgressive overyielding", x = "scale")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
@@ -592,7 +539,9 @@ env_metrics %>%
 save("Fig_2_f", file = here("figures", "Fig_2_f.RData"))
 
 Fig_2_f
+```
 
+```{r}
 env_metrics %>% 
   select(-data) %>% 
   gather(metric, value, -envnum, -env_comb) %>%
@@ -602,6 +551,7 @@ env_metrics %>%
   mutate_if(is.numeric, round, 3)
 
 ```
+
 
 
 ######
