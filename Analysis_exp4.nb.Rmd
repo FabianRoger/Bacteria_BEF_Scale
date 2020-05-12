@@ -1,32 +1,7 @@
 ---
-title: "Analysis_exp4"
+title: "Bacterial EF across Scale - Experiments"
 output: html_notebook
 ---
-
-This script should be the final analysis. It takes data from experiment 3 + the Kan treatment which has been re-run. 
-
-Lars' mail: 
-
-The to-do list includes:
-Replace the present Kan data with data on Kan6 from the last experiment.
-
-Fig 2. A and B: Power function production-richness with #environments and scale/heterogeneity per se as fill. For both simulations and experiment. 
-       C and D: Overyielding. 
-       E and F: transgressive overyielding. With function in mixtures = average of monocultures.
-
-Fig. 4. Heatmap (triangle): e.g. scale on x-axis, heterogeneity on y-axis, fill with transgressive overyielding. 
-
-Fig. S1. How linear slope changes with scale and heterogeneity for both simulation and experiment. 
-         As Fig. 1 a and b (for the power function).
-
-Fig. S2. Alternative choices of trait distributions and approaches to define yields in mixtures (dominance and weighted dominance).
-         If we go for the average in the main text.
-
-Fig. S3. Production of each strain in each environment.
-
-Fig. S4. Production-richness relationships.
-
-Fig. S5. Highlighting (in green) which strain is included in which combination in each environment.
 
 
 ```{r, message=FALSE}
@@ -43,13 +18,35 @@ library(purrr)
 library(gridExtra)
 ```
 
-download data 
+This script exports: 
 
-The data are archived on [Figshare](https://doi.org/10.6084/m9.figshare.12279884.v1)
++ the subplots for Figure 2
++ Figure S3
++ Figure S4
++ Figure S5
+
+See script `Multipanel_Fig_2.Rmd` for the assemblage and export of figure 2. 
+
+make folder to export figures
+```{r}
+
+if(! dir.exists(here("figures"))){
+  dir.create(here("figures"))
+}
+
+```
+
+
+This script analyses the data from the experiments. The analysis of the data follow the same structure as the analysis of the simulations. 
+
+##download data
+
+The raw data are archived on [Figshare](https://doi.org/10.6084/m9.figshare.12279884.v1)
 
 >Gamfeldt, Lars; Roger, Fabian; Palm, Martin; Hagan, James; Warringer, Jonas; Farewell, Anne (2020): Biodiversity and ecosystem functioning across gradients in spatial scale. figshare. Dataset. https://doi.org/10.6084/m9.figshare.12279884.v1
 
 Loading the data will throw 10 parsing failures caused by unexpected values in varibales that we do not include in our analysis. These can be safely ignored. 
+
 ```{r}
 
 Data <- read_tsv(url("https://ndownloader.figshare.com/files/22626299"))
@@ -98,22 +95,7 @@ Data %>%
   filter(!grepl("ATCC", gene)) %>%
   filter(!grepl("control", gene)) %>% 
   mutate(Richness = nchar(gene)) 
-
-summary(Data)
 ```
-
-## check for block effects
-
-!!! haven't looked at this yet might need to take this into account !!!
-!!! model probably wrong too, this was only a very quick attempt !!!
-
-```{r}
-
-lm(GrowthYield ~ gene*Antibiotic + withinPlateRep, data = Data) %>% 
-  tidy()
-
-```
-
 
 
 ## exploratory graphs
@@ -121,10 +103,9 @@ lm(GrowthYield ~ gene*Antibiotic + withinPlateRep, data = Data) %>%
 ### Fig. S4. 
 Production of each strain in each environment.
 
+In this graph we look at the measured prodcution of each strain in each antibiotic treatment. Strains have been selected to maximise the variance in growth performance such that different strains are expected to perform well under different antibiotic trematments and no strain is supposed to perform well in all conditions. 
+
 ```{r}
-#decide on colour scheme
-# Blues <- RColorBrewer::brewer.pal(9, "Blues")
-# Blues <- Blues[c(2,4,6,8,9)]
 
 Data %>% 
   filter(Richness ==1) %>% 
@@ -133,17 +114,14 @@ Data %>%
   geom_hline(yintercept = mean(Data[Data$Antibiotic == "Con", ]$GrowthYield), 
              linetype = "dashed", colour = "darkgrey")+
   stat_summary(fun.data = "mean_cl_boot", geom = "pointrange", 
-               colour = "black", size = 0.4,fatten = 0.1,
+               colour = "black", fill = "white", shape = 21, stroke = 0.4, size = 0.5, fatten = 2,
                position = position_dodge(width = 0.5), 
                aes(group = paste(gene, Antibiotic)))+
   scale_y_log10()+
   theme_bw()+
   guides(colour = guide_legend(override.aes = list(size = 4, alpha = 1)))+
-  #scale_color_viridis_d()
-  #scale_color_brewer(palette = "Set1")
-  scale_color_manual(values = viridis(6)[1:5])
-
-geom_pointrange()
+  scale_color_manual(values = viridis(6)[1:5])+
+  labs(y = "production")
 
 ggsave(here("figures", "Fig_S4.pdf"), height = 4, width = 8)
 ```
@@ -152,6 +130,8 @@ ggsave(here("figures", "Fig_S4.pdf"), height = 4, width = 8)
 ### Fig. S3
 
 Production-richness relationships.
+
+In this graph we explore the biodiversity - ecosystem functioning (BEF) relationship in each environment. Community prodcution is the metric of functioning and initial strain richness is the measure of biodiversity. 
 
 ```{r}
 
@@ -172,7 +152,8 @@ Data %>%
                   ymax = exp(.fitted + 2*.se.fit),
                   group = Antibiotic), fill = "grey", alpha = 0.2)+
   facet_wrap(~Antibiotic, scales = "free_y")+
-  theme_bw()
+  theme_bw()+
+  labs(y = "production")
 
 
 ggsave(here("figures", "Fig_S3.pdf"), height = 4, width = 8)
@@ -182,6 +163,10 @@ ggsave(here("figures", "Fig_S3.pdf"), height = 4, width = 8)
 ### Fig. S5. 
 
 Highlighting (in green) which strain is included in which combination in each environment.
+
+In Figure S3, we sho the BEF realtionship in each environment. Each point in that figure represents a replicate of either a single strain (Richness = 1) or a combination of strains (Richness 2 -5). All possible species combinations are present. 
+
+In this figure we highlight for each strain what species combination it is part of. This highlights some obvious patterns of positive and negative slelection effects were the mixture performance depends strongly on the presence or absence of a particular strain in a particular environemnt. 
 
 ```{r, warning=FALSE}
 
@@ -210,7 +195,8 @@ plots[[i]] <-
   scale_color_manual(values = c("grey", "#4DAF4A"), name = "Strain in mixture")+
   theme_bw()+
   theme(legend.position = if(i == 1){c(0.9, 0.2)} else{"none"})+
-  labs(title = paste("Strain", strain[i]))
+  labs(title = paste("Strain", strain[i]),
+       y = "production")
   
 }
 
@@ -222,7 +208,6 @@ plots
 ```
 
 
-# Analysis
 
 ## observed vs expected mixture preformance
 
@@ -306,25 +291,41 @@ Data_poly %>%
              alpha = 0.1)+
   geom_abline(slope = 0)+
   facet_grid(type~Antibiotic)+
+  guides(colour = guide_legend(override.aes = list(size = 4, alpha = 1)))+
   theme_bw()+
-  scale_color_brewer(palette = "Set1")
+  scale_color_brewer(palette = "Set1")+
+  labs(x = "richness", y = "performance relative to expected")
   
 ```
 
+##BEF metrics
 
-## average performance for all environment combinations
+We calculate the slope between richness and functioning for all combinations of environments. 
 
-Here we calculate the mean functioning for each strain and strain combinations for all possible combinations of environments. 
++ for all scales (1:5 environments)
++ for all possible unique combinations of environments 
+
+We calculate the functioning of a given species mixture in that combination of environemnts at that scale as the average functioning of that species mixture in the single environments. 
+
+For each scale and environment combination we then calculate the following metrics:
+
++ the **linear slope** of the richness ~ functioning relationship
++ the **slope of a power fit** to the richness ~ functioning relationship
++ **overyielding**: highest mixture value / mean monoculture value
++ **transgressive overyielding**: highest mixture value / maximum monoculture value
+
+in a first step we calculate the mean functioning for each strain and strain combinations for all possible combinations of environments. 
 
 As there is no sensible way how the replicated measurements should be matched across environments, we first calculate the average for each strain combination in each environment. 
 
 ```{r, warning=FALSE}
 
+#calculate the average growth yield of each of teh 32 strain combinations in each environment and reshape the data to one combination per row and the 5 columns for the 5 environments. 
+
 Data_wide <- 
   Data %>% 
   select(Richness, gene, Antibiotic, GrowthYield) %>% 
   group_by(Richness, gene, Antibiotic) %>% 
-  #mutate(rep = 1:n()) %>% 
   summarise(GrowthYield = mean(GrowthYield, na.rm = T)) %>% 
   spread(Antibiotic, GrowthYield)
 
@@ -337,32 +338,29 @@ ab_comb <- sapply(1:length(ab), function(x) combn(ab, x))
 # number of species
 specnum <- length(unique(Data_mono$gene))
 
+# calculate the average performance or each strain combination in each environemnt combination
 env_values <- 
-lapply(ab_comb, function(x) { #for all levels of environmental richness (1:5)
+lapply(ab_comb, function(x) { #for all levels of environmental richness (scale: 1:5)
   apply(x, 2, function(y) { #for all combination of environments
    
      df <- data.frame(
        env_comb = paste0(y, collapse = " "), # which combination of environemnts
-       envnum = length(y), # what environmental richness
+       envnum = length(y), # what scale
        richness = Data_wide$Richness, 
        gene = Data_wide$gene,
-       #replicate = Data_wide$rep,
        functioning = rowMeans(Data_wide[,y]) #mean of functioning across environments
                      )
   })
   })
 
-# expand to dataframe with average function for each 
-# species richness level, 
-# each species combination,
-# and each environmental combination
-
-
+# bind results to one dataframe
 env_values <- bind_rows(unlist(env_values, recursive = FALSE))
 ```
 
 
-plot 
+### Fig 2d - power-fits 
+
+The relationship between average strain community production and richness for the 5 spatial scales. 
 ```{r}
 
 Fig_2_d <- 
@@ -399,9 +397,8 @@ Fig_2_d
 ```
 
 
-statistics
+### power-fit statistics
 ```{r}
-#slopes
 
 env_values %>%
   group_by(envnum) %>% 
@@ -418,9 +415,10 @@ env_values %>%
   filter(term == "b") %>% 
   select(envnum, estimate, p.value) %>% 
   mutate_if(is.numeric, round, digits = 3)
+
 ```
 
-now we calculate 
+now we calculate the remaining BEF metrics (overyielding, transgressice overyielding and slopes)
 
 ```{r}
 
@@ -428,19 +426,24 @@ env_metrics <-
   env_values %>% 
   group_by(env_comb, envnum) %>%
   nest() %>% 
+  #linear production ~ richness slope
   mutate(linear_fit = map(data, ~lm(functioning ~ richness, data = .))) %>%
   mutate(linear_fit = map_dbl(linear_fit, function(x) coef(x)[2])) %>% 
+  #loglinear fit to find start parameters for power fit
   mutate(log_fit = map(data, ~lm(log(functioning) ~ log(richness), data = .))) %>% 
   mutate(log_fit = map(log_fit, tidy)) %>% 
   unnest(log_fit) %>% 
   select(-std.error, -statistic, -p.value) %>% 
   spread(term, estimate) %>% 
+  #non-linear fit to the production ~ richness slope. Extracting the exponent parameter b  
   mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., 
                                     start = list(a = exp(`(Intercept)`) , b = `log(richness)`)))) %>%  
   mutate(power_fit = map_dbl(power_fit, function(x) coef(x)[2])) %>% 
+  #overyielding (mean hightes mixture / mean monoculture)
    mutate(overyield = map_dbl(data, function(x) {
      mean(x[x$richness == specnum,]$functioning, na.rm = T) / 
        mean(x[x$richness == 1,]$functioning, na.rm = T)})) %>% 
+  #transgressive overyileding (mean highest mixture / max monoculture)
   mutate(transgressive = map_dbl(data, function(x) {
     x %>% 
       group_by(gene) %>% 
@@ -450,13 +453,11 @@ env_metrics <-
       summarise(functioning = max(functioning, na.rm = T)) %>% 
       {.[.$richness == specnum,]$functioning /
           .[.$richness == 1,]$functioning}
-    })) %>%
- # mutate(transgressive = (transgressive-1)*100) %>% 
-  {.}
+    })) 
 
 ```
 
-
++ intermediate plot to visualize the results together
 ```{r}
 d <- tibble(linear_fit = c(-0.2,0.2),
             overyield = c(-20, 20),
@@ -473,12 +474,9 @@ env_metrics %>%
   stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
   theme_bw()+
   labs(x = "number of environments")
-
-ggsave(here("figures", "slopes_by_N_Env_norm.pdf"), width = 6, height = 5)
-  
 ```
 
-
+### Fig 2e - overyielding
 ```{r}
 Fig_2_e <- 
 env_metrics %>% 
@@ -504,6 +502,7 @@ save("Fig_2_e", file = here("figures", "Fig_2_e.RData"))
 Fig_2_e
 ```
 
+### overyielding statistics
 ```{r}
 env_metrics %>% 
   select(-data) %>% 
@@ -515,7 +514,7 @@ env_metrics %>%
 
 ```
 
-
+### Fig 2f - transgressive overyielding
 ```{r}
 Fig_2_f <- 
 env_metrics %>% 
@@ -541,6 +540,7 @@ save("Fig_2_f", file = here("figures", "Fig_2_f.RData"))
 Fig_2_f
 ```
 
+### transgressive overyielding - statistics
 ```{r}
 env_metrics %>% 
   select(-data) %>% 
@@ -554,7 +554,7 @@ env_metrics %>%
 
 
 
-######
+# Simulations for full environment x scale gradient (not included)
 
 ```{r, eval = FALSE}
 
