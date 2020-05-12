@@ -5,6 +5,8 @@ output: html_notebook
 
 In this script I join and export the raw data from the experiments. 
 
+The originaly files are not available on figshare (this script cannot be run) but this script documents how the raw data file has been generated from the original files. 
+
 We have data from 4 different antibiotics + control conditions (no antibiotics) in triplicates. 
 
 We have the following antibiotics:
@@ -63,7 +65,7 @@ lapply(Files2, function(x) {
 
 ```
 
-## clean data
+## merge data
 
 + bind all dataframes together to one long dataframe
 + export joined data and uplaod to figshare. 
