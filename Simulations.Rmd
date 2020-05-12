@@ -119,7 +119,7 @@ for each environment `sapply(env, ...` it cycles through all richness levels `la
 Then it calculates the mixture performance of that species combination of that richness level in that environment given the species performance stored in `Traits` and given the rules in the chosen `Scenario`
 
 Choosing Scenario = 3 produces the results in the main text and the subplots for Figure 2
-Choosing Scenarion = 1 & 2 produces the subplots for supplemantary Figure S1
+Choosing Scenario = 1 & 2 produces the subplots for supplemantary Figure S1
 
 ```{r}
 
@@ -130,7 +130,7 @@ Choosing Scenarion = 1 & 2 produces the subplots for supplemantary Figure S1
 # 3 = Weighted mean
 
 
-Scenario <- 2
+Scenario <- 3
 
 plot_values <- sapply(env, #for each environment
                       function(x) {

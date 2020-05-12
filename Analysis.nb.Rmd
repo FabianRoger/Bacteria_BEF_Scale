@@ -70,7 +70,7 @@ We are interested in one response variables from the raw data:
 + growth yield 
 
 ## clean data
-+ exclude unecessary varibales
++ exclude unecessary variables
 + rename variables
 + change type to numeric
 + filter spots with control strain ("ATCC") as data are allready normalized
