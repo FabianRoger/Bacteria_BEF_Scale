@@ -23,7 +23,7 @@ This script exports:
 
 See script `Multipanel_Fig_2.Rmd` for the assemblage and export of figure 2. 
 
-To generate the subplots for Figure S2, the `Scenario` Variable (line 135) has to be set to `1` and `2` respectively, and the code from line 135 to line 420 has to be run with these valules respectively. Figure S2 is the assembled and exported from teh same script as Figure 2. 
+To generate the subplots for Figure S2, the `Scenario` Variable (line 135) has to be set to `1` and `2` respectively, and the code from line 135 to line 420 has to be run with these valules respectively. Figure S2 is then assembled and exported from the same script as Figure 2. 
 
 make folder to export figures
 ```{r}
@@ -39,8 +39,8 @@ if(! dir.exists(here("figures"))){
 
 + We want to simulate 5 strains of Bacteria, growing in 5 different environments. 
 + Each Strain differs in it's ability to grow on each antibiotic.
-+ We grow the bacteria in every possible combination (monocultures and all possibel 2 to 5 species mixtures)
-+ We grow them on every possible combination of environments (1 antibiotics to 4 antibiotics + control)
++ We grow the bacteria in every possible combination (monocultures and all possible species mixtures)
++ We grow them on every possible combination of environments
 + We measure EF at different scales going from 1 to 5 environments  
 
 define number of species and environments
@@ -116,10 +116,10 @@ here we calculate the outcome (biomass / 'functioning') of every species combina
 *what the code does*
 
 for each environment `sapply(env, ...` it cycles through all richness levels `lapply(spec_comb, ...)` and for each richness level it cycles through all species combinations `apply(..., 2, )`.
-Then it calculates the the mixture performance of that species combination of that richness level in that environment given the species performance stored in `Traits` and given the rules given by the chosen `Scenario`
+Then it calculates the mixture performance of that species combination of that richness level in that environment given the species performance stored in `Traits` and given the rules in the chosen `Scenario`
 
 Choosing Scenario = 3 produces the results in the main text and the subplots for Figure 2
-Choosing Scenarion = 2 & 1 produces the subplots for supplemantary Figure S1
+Choosing Scenarion = 1 & 2 produces the subplots for supplemantary Figure S1
 
 ```{r}
 
@@ -130,7 +130,7 @@ Choosing Scenarion = 2 & 1 produces the subplots for supplemantary Figure S1
 # 3 = Weighted mean
 
 
-Scenario <- 3
+Scenario <- 2
 
 plot_values <- sapply(env, #for each environment
                       function(x) {
@@ -174,7 +174,7 @@ plot_values_df <-
 
 ### plot plot-values
 
-Here we plot the single species and mixture functioning of each species combination in each environment. The Mixture perfomrmance is calculated as the weighte dmean of the monoculture performances. 
+Here we plot the single species and mixture functioning of each species combination in each environment. The Mixture performance is calculated as the weighted mean of the monoculture performances. 
 
 We show a power-fit (with 2*se CI) and a linear fit, both showing the positive richness ~ functioning relationship (that follows inherently from the way we calculate the mixture values)
 

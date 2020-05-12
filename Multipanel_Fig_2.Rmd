@@ -1,5 +1,5 @@
 ---
-title: "script to make multipanel figure 2"
+title: "script to make multipanel figure 2 and S2"
 output: html_notebook
 ---
 
@@ -76,7 +76,7 @@ ggsave(plot = p1, filename = here("figures", "Fig_2.pdf"), width = 9, height = 6
 
 ```
 
-#Figure S1
+#Figure S2
 load figures
 ```{r}
 load(here("figures", "Fig_S2_a.RData"))

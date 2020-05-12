@@ -31,7 +31,11 @@ The second script documents how the strains have been selected to maximize varia
 
 in the Terminal:
 
-```cd path/to/local/folder``` (on your computer - the folder were you want the repository to live) command on Windosw might differ. 
+```cd path/to/local/folder``` 
+
+(on your computer - the folder were you want the repository to live) command on Windosw might differ. 
+
+
 ```git clone https://github.com/FabianRoger/Bacteria_BEF_Scale.git```
 
 This should download the directory. 
