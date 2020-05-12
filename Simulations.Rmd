@@ -5,12 +5,10 @@ output: html_notebook
 
 ```{r, message=FALSE}
 library(dplyr)
-#library(tibble)
 library(tidyr)
 library(purrr)
 library(ggplot2)
 library(broom)
-#library(akima)
 library(RColorBrewer)
 library(viridis)
 library(here)
