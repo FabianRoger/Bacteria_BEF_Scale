@@ -10,14 +10,32 @@ library(tidyr)
 library(purrr)
 library(ggplot2)
 library(broom)
-#library(raster) (for now only needed for last visualization)
-library(akima)
+#library(akima)
 library(RColorBrewer)
 library(viridis)
 library(here)
-library(ggsci)
 library(pbapply)
 ```
+
+This script exports: 
+
++ the subplots for Figure 2
++ the subplots for Figure S2
++ Figure S1
+
+See script `Multipanel_Fig_2.Rmd` for the assemblage and export of figure 2. 
+
+To generate the subplots for Figure S2, the `Scenario` Variable (line 135) has to be set to `1` and `2` respectively, and the code from line 135 to line 420 has to be run with these valules respectively. Figure S2 is the assembled and exported from teh same script as Figure 2. 
+
+make folder to export figures
+```{r}
+
+if(! dir.exists(here("figures"))){
+  dir.create(here("figures"))
+}
+
+```
+
 
 #set up simulations
 
@@ -102,7 +120,8 @@ here we calculate the outcome (biomass / 'functioning') of every species combina
 for each environment `sapply(env, ...` it cycles through all richness levels `lapply(spec_comb, ...)` and for each richness level it cycles through all species combinations `apply(..., 2, )`.
 Then it calculates the the mixture performance of that species combination of that richness level in that environment given the species performance stored in `Traits` and given the rules given by the chosen `Scenario`
 
-MAYBE? We also add a small random error to the results for the curve fitting not to fail.
+Choosing Scenario = 3 produces the results in the main text and the subplots for Figure 2
+Choosing Scenarion = 2 & 1 produces the subplots for supplemantary Figure S1
 
 ```{r}
 
@@ -291,36 +310,21 @@ env_values %>%
         axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))
 }
 
-if(Scenario == 3) {
+if(Scenario == 3) { #weighted mean
   save("Fig_2_a", file = here("figures", "Fig_2_a.RData"))
-  } else if(Scenario == 2) {
-  save("Fig_2_a", file = here("figures", "Fig_S1_a.RData"))
-    } else if(Scenario == 1) {
-    save("Fig_2_a", file = here("figures", "Fig_S1_d.RData"))}
-
-env_values %>%
-  group_by(richness, env_comb, envnum) %>% 
-  summarise(functioning = mean(functioning)) %>% 
-  filter(richness %in% c(1,5)) %>% 
-  ggplot(aes(x = richnes, y = functioning, group = env_comb))+
-  geom_point( size = 0.8, alpha = 1)+
-  geom_line( size = 0.5, alpha = 1)+
-  facet_wrap(~envnum)+
-  #geom_smooth(method = 'lm', aes(group = 1))+
-  theme_bw()+
-  theme(legend.position = "none")
-
-
-env_values %>% 
-  filter(envnum == 5) %>% 
-  ggplot(aes(x = richness, y = functioning, colour = as.factor(envnum)))+
-  geom_point()+
-  geom_smooth(method = "lm", aes(group = 1))
+  } else if(Scenario == 2) { #mean
+    Fig_S2_a <- Fig_2_a
+  save("Fig_S2_a", file = here("figures", "Fig_S2_a.RData"))
+    } else if(Scenario == 1) { #dominance
+      Fig_S2_d <- Fig_2_a
+    save("Fig_S2_d", file = here("figures", "Fig_S2_d.RData"))}
 
 ```
+
+
 ### power-fit statistics
 ```{r}
-
+if(Scenario == 3){
 env_values %>%
   group_by(envnum) %>% 
   nest() %>% 
@@ -333,7 +337,7 @@ env_values %>%
   mutate_if(is.numeric, round, digits = 3) %>% 
   group_by(envnum) %>% 
   summarise(mean(estimate))
-
+}
 
 ```
 
@@ -356,31 +360,17 @@ env_metrics %>%
         axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )+
   NULL
 
-if(Scenario == 3) {
+if(Scenario == 3) { #weighted mean
   save("Fig_2_b", file = here("figures", "Fig_2_b.RData"))
-  } else if(Scenario == 2) {
-  save("Fig_2_b", file = here("figures", "Fig_S1_b.RData"))
-    } else if(Scenario == 1) {
-    save("Fig_2_b", file = here("figures", "Fig_S1_e.RData"))}
+  } else if(Scenario == 2) { #mean
+    Fig_S2_b <- Fig_2_b
+  save("Fig_S2_b", file = here("figures", "Fig_S2_b.RData"))
+    } else if(Scenario == 1) { #dominance
+      Fig_S2_e <- Fig_2_b
+    save("Fig_S2_e", file = here("figures", "Fig_S2_e.RData"))}
 
 
 Fig_2_b
-
-
-test <- list(1, 2, 3, 7)
-
-combos <- sapply(1:length(test), function(x) {combn(test, x)})
-
-lapply(combos, function(x) max(unlist(x)))
-
-combos[[4]]
-
-env_metrics %>% 
-  select(-data) %>% 
-  gather(metric, value, -envnum, -env_comb) %>%
-  filter(metric == "overyield") %>% 
-  group_by(envnum) %>% 
-  summarise(mean = mean(value))
 ```
 
 ### overyielding statistics
@@ -418,12 +408,14 @@ env_metrics %>%
   NULL
 
 
-if(Scenario == 3) {
+if(Scenario == 3) { #weighted mean
   save("Fig_2_c", file = here("figures", "Fig_2_c.RData"))
-  } else if(Scenario == 2) {
-  save("Fig_2_c", file = here("figures", "Fig_S1_c.RData"))
-    } else if(Scenario == 1) {
-    save("Fig_2_c", file = here("figures", "Fig_S1_f.RData"))}
+  } else if(Scenario == 2) { #mean
+    Fig_S2_c <- Fig_2_c
+  save("Fig_S2_c", file = here("figures", "Fig_S2_c.RData"))
+    } else if(Scenario == 1) { #dominace
+      Fig_S2_f <- Fig_2_c
+    save("Fig_S2_f", file = here("figures", "Fig_S2_f.RData"))}
 
 Fig_2_c
 ```
@@ -607,14 +599,23 @@ bind_rows(env_metrics_list)
 ```
 
 ```{r}
+p <- 
 Results %>% 
   gather(metric, value) %>% 
+  mutate(metric = factor(metric,  labels = c("beta slopes", "overyielding", "transgressive\noveryielding"))) %>% 
   ggplot(aes(x = value, fill = metric))+
   geom_histogram(binwidth = 0.005)+
   facet_wrap(~metric)+
   geom_vline(xintercept = 0, linetype = "dashed")+
   theme_bw()+
-  scale_fill_brewer(palette = "Set1")
+  scale_fill_brewer(palette = "Set1")+
+  theme(legend.position = "none")+
+  labs(y = paste("n out of", N, "draws", sep = " "),
+       title = "change in production ~ richness relationship with scale")
+
+ggsave(plot = p, filename = here("figures", "Fig_S1.pdf"), width = 6, height = 3)
+
+p
 ```
 
 
@@ -624,7 +625,7 @@ Results %>%
  + test which scenario fits model best, by correlating expected yield based on mono-culture data with three scenarios (average, weighted average, dominance)
 
  
-```{r}
+```{r, eval = FALSE}
 
 # vector of environemnts
 ab <- as.character(unique(plot_values_df$environment))
@@ -661,7 +662,7 @@ env_values <- bind_rows(unlist(env_values, recursive = FALSE))
 
 
 
-```{r}
+```{r, eval = FALSE}
 env_metrics <- 
   env_values %>% 
   group_by(env_comb, envnum, envdiv) %>%
@@ -705,12 +706,11 @@ expand_grid(envnum = res_int$x, envdiv = res_int$y) %>%
   mutate(transgressive = c(t(res_int$z))) %>% 
   na.omit()
 
+
 ggplot(df, aes(x = envdiv ,y = envnum , fill = transgressive))+
   geom_raster()+
   geom_point(data = res, shape = 22, colour = "red", size = 4)+
   scale_fill_viridis_c()+
   theme_bw()
-
-
 ```
 
