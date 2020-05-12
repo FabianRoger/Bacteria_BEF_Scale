@@ -25,8 +25,23 @@ These scripts cannot be run as the necessary data are not provided. The first sc
 
 The second script documents how the strains have been selected to maximize variance in growth performance across environments. The script is for internal documentation. These data are not public. 
 
-**Instruction to download a Github repo can be found** [here](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository)
+### Instruction to download a Github repo
 
+#### with git
+
+in the Terminal:
+
+```cd path/to/local/folder``` (on your computer - the folder were you want the repository to live) command on Windosw might differ. 
+```git clone https://github.com/FabianRoger/Bacteria_BEF_Scale.git```
+
+This should download the directory. 
+
+#### without git
 If you don't have git installed, you can download the repository as zip file and save it locally. 
+
+--> Clone or download (green button top right)
+--> Download Zip
+
+then save and extract the zip where you want the director to live. 
 
 
