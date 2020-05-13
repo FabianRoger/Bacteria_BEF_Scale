@@ -130,7 +130,7 @@ Choosing Scenarion = 1 & 2 produces the subplots for supplemantary Figure S1
 # 3 = Weighted mean
 
 
-Scenario <- 2
+Scenario <- 3
 
 plot_values <- sapply(env, #for each environment
                       function(x) {
@@ -332,9 +332,7 @@ env_values %>%
   filter(term == "b") %>% 
   select(envnum, estimate, p.value) %>% 
   ungroup() %>% 
-  mutate_if(is.numeric, round, digits = 3) %>% 
-  group_by(envnum) %>% 
-  summarise(mean(estimate))
+  mutate_if(is.numeric, round, digits = 3)
 }
 
 ```
