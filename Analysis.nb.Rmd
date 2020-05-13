@@ -105,10 +105,14 @@ Production of each strain in each environment.
 
 In this graph we look at the measured prodcution of each strain in each antibiotic treatment. Strains have been selected to maximise the variance in growth performance such that different strains are expected to perform well under different antibiotic trematments and no strain is supposed to perform well in all conditions. 
 
+NOTE: for the figure we rename gene c-f to b-e to match the text in the manuscript. 
+
 ```{r}
 
 Data %>% 
   filter(Richness ==1) %>% 
+  rowwise() %>% 
+  mutate(gene = ifelse(gene == "a", "a", letters[which(letters == gene)-1])) %>% 
   ggplot(aes(x = Antibiotic, y = GrowthYield, colour = gene))+
   geom_point(position = position_jitterdodge(dodge.width = 0.5, jitter.width = 0.05), size = 0.6, alpha = 0.5)+
   geom_hline(yintercept = mean(Data[Data$Antibiotic == "Con", ]$GrowthYield), 
@@ -195,7 +199,7 @@ plots[[i]] <-
   scale_color_manual(values = c("grey", "#4DAF4A"), name = "Strain in mixture")+
   theme_bw()+
   theme(legend.position = if(i == 1){c(0.9, 0.2)} else{"none"})+
-  labs(title = paste("Strain", strain[i]),
+  labs(title = paste("Strain", ifelse(strain[i] == "a", "a", letters[which(letters == strain[i])-1])),
        y = "production")
   
 }
