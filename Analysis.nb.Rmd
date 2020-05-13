@@ -172,6 +172,7 @@ In Figure S3, we sho the BEF realtionship in each environment. Each point in tha
 
 In this figure we highlight for each strain what species combination it is part of. This highlights some obvious patterns of positive and negative slelection effects were the mixture performance depends strongly on the presence or absence of a particular strain in a particular environemnt. 
 
+NOTE: for the figure we rename gene c-f to b-e to match the text in the manuscript. 
 ```{r, warning=FALSE}
 
 strain <- filter(Data, Richness == 1) %>% pull(gene) %>% unique %>% sort
