@@ -332,9 +332,7 @@ env_values %>%
   filter(term == "b") %>% 
   select(envnum, estimate, p.value) %>% 
   ungroup() %>% 
-  mutate_if(is.numeric, round, digits = 3) %>% 
-  group_by(envnum) %>% 
-  summarise(mean(estimate))
+  mutate_if(is.numeric, round, digits = 3)
 }
 
 ```
