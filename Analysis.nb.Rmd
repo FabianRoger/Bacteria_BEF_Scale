@@ -16,6 +16,7 @@ library(RColorBrewer)
 library(viridis)
 library(purrr)
 library(gridExtra)
+library(nlstools)
 ```
 
 This script exports: 
