@@ -47,6 +47,3 @@ If you don't have git installed, you can download the repository as zip file and
 --> Download Zip
 
 then save and extract the zip where you want the director to live. 
-
-
-THIS IS A TEST
