@@ -13,6 +13,7 @@ library(RColorBrewer)
 library(viridis)
 library(here)
 library(pbapply)
+library(nlstools)
 ```
 
 This script exports: 
@@ -327,9 +328,12 @@ env_values %>%
   group_by(envnum) %>% 
   nest() %>% 
   mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., start = list(a = 1, b = 1)))) %>% 
+  mutate(power_ci = map(power_fit, function(x) confint2(x, "b", level = 0.95))) %>% 
+  mutate(power_ci = map(power_ci, function(x) tibble(level = colnames(x), CI = x[c(1:2)]))) %>%
   mutate(power_fit = map(power_fit, tidy)) %>% 
   unnest(cols = power_fit) %>% 
-  filter(term == "b") %>% 
+  filter(term == "b") %>%
+  unnest(cols = power_ci)
   select(envnum, estimate, p.value) %>% 
   ungroup() %>% 
   mutate_if(is.numeric, round, digits = 3)
