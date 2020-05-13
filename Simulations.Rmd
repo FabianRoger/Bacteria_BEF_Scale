@@ -333,8 +333,8 @@ env_values %>%
   mutate(power_fit = map(power_fit, tidy)) %>% 
   unnest(cols = power_fit) %>% 
   filter(term == "b") %>%
-  unnest(cols = power_ci) %>% 
-  select(envnum, estimate, p.value, level, CI) %>% 
+  unnest(cols = power_ci)
+  select(envnum, estimate, p.value) %>% 
   ungroup() %>% 
   mutate_if(is.numeric, round, digits = 3)
 }
