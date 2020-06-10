@@ -19,12 +19,12 @@ library(nlstools)
 This script exports: 
 
 + the subplots for Figure 2
-+ the subplots for Figure S2
++ the subplots for Figure S3
 + Figure S1
 
 See script `Multipanel_Fig_2.Rmd` for the assemblage and export of figure 2. 
 
-To generate the subplots for Figure S2, the `Scenario` Variable (line 135) has to be set to `1` and `2` respectively, and the code from line 135 to line 420 has to be run with these valules respectively. Figure S2 is then assembled and exported from the same script as Figure 2. 
+To generate the subplots for Figure S3, the `Scenario` Variable (line 135) has to be set to `1` and `2` respectively, and the code from line 135 to line 420 has to be run with these valules respectively. Figure S3 is then assembled and exported from the same script as Figure 2. 
 
 make folder to export figures
 ```{r}
@@ -312,11 +312,11 @@ env_values %>%
 if(Scenario == 3) { #weighted mean
   save("Fig_2_a", file = here("figures", "Fig_2_a.RData"))
   } else if(Scenario == 2) { #mean
-    Fig_S2_a <- Fig_2_a
-  save("Fig_S2_a", file = here("figures", "Fig_S2_a.RData"))
+    Fig_S3_a <- Fig_2_a
+  save("Fig_S3_a", file = here("figures", "Fig_S3_a.RData"))
     } else if(Scenario == 1) { #dominance
-      Fig_S2_d <- Fig_2_a
-    save("Fig_S2_d", file = here("figures", "Fig_S2_d.RData"))}
+      Fig_S3_d <- Fig_2_a
+    save("Fig_S3_d", file = here("figures", "Fig_S3_d.RData"))}
 
 ```
 
@@ -363,11 +363,11 @@ env_metrics %>%
 if(Scenario == 3) { #weighted mean
   save("Fig_2_b", file = here("figures", "Fig_2_b.RData"))
   } else if(Scenario == 2) { #mean
-    Fig_S2_b <- Fig_2_b
-  save("Fig_S2_b", file = here("figures", "Fig_S2_b.RData"))
+    Fig_S3_b <- Fig_2_b
+  save("Fig_S3_b", file = here("figures", "Fig_S3_b.RData"))
     } else if(Scenario == 1) { #dominance
-      Fig_S2_e <- Fig_2_b
-    save("Fig_S2_e", file = here("figures", "Fig_S2_e.RData"))}
+      Fig_S3_e <- Fig_2_b
+    save("Fig_S3_e", file = here("figures", "Fig_S3_e.RData"))}
 
 
 Fig_2_b
@@ -411,11 +411,11 @@ env_metrics %>%
 if(Scenario == 3) { #weighted mean
   save("Fig_2_c", file = here("figures", "Fig_2_c.RData"))
   } else if(Scenario == 2) { #mean
-    Fig_S2_c <- Fig_2_c
-  save("Fig_S2_c", file = here("figures", "Fig_S2_c.RData"))
+    Fig_S3_c <- Fig_2_c
+  save("Fig_S3_c", file = here("figures", "Fig_S3_c.RData"))
     } else if(Scenario == 1) { #dominace
-      Fig_S2_f <- Fig_2_c
-    save("Fig_S2_f", file = here("figures", "Fig_S2_f.RData"))}
+      Fig_S3_f <- Fig_2_c
+    save("Fig_S3_f", file = here("figures", "Fig_S3_f.RData"))}
 
 Fig_2_c
 ```
@@ -438,7 +438,7 @@ env_metrics %>%
 
 In the above example with took a single draw for the trait values from the uniform distribution. In the code below, we repeat this 500 times to get a distribution of BEF results from multiple draws
 
-## fitness values
+### fitness values
 ```{r}
 Traits <- matrix(
   nrow = length(env),
@@ -460,7 +460,7 @@ return(Traits)})
 ```
 
 
-##plot values
+###plot values
 ```{r}
 
 # choose scenario
@@ -511,7 +511,7 @@ return(plot_values_df)
 ```
 
 
-##BEF metrics
+###BEF metrics
 ```{r}
 
 env_metrics_list <- 
@@ -598,6 +598,7 @@ Results <-
 bind_rows(env_metrics_list)
 ```
 
+###Fig S3 - slope histograms
 ```{r}
 p <- 
 Results %>% 
@@ -613,7 +614,7 @@ Results %>%
   labs(y = paste("n out of", N, "draws", sep = " "),
        title = "change in production ~ richness relationship with scale")
 
-ggsave(plot = p, filename = here("figures", "Fig_S1.pdf"), width = 6, height = 3)
+ggsave(plot = p, filename = here("figures", "Fig_S3.pdf"), width = 6, height = 3)
 
 p
 ```
