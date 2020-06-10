@@ -22,9 +22,9 @@ library(nlstools)
 This script exports: 
 
 + the subplots for Figure 2
-+ Figure S3
 + Figure S4
 + Figure S5
++ Figure S6
 
 See script `Multipanel_Fig_2.Rmd` for the assemblage and export of figure 2. 
 
@@ -101,7 +101,7 @@ Data %>%
 
 ## exploratory graphs
 
-### Fig. S4. 
+### Fig. S5. 
 Production of each strain in each environment.
 
 In this graph we look at the measured prodcution of each strain in each antibiotic treatment. Strains have been selected to maximise the variance in growth performance such that different strains are expected to perform well under different antibiotic trematments and no strain is supposed to perform well in all conditions. 
@@ -126,13 +126,13 @@ Data %>%
   theme_bw()+
   guides(colour = guide_legend(override.aes = list(size = 4, alpha = 1)))+
   scale_color_manual(values = viridis(6)[1:5])+
-  labs(y = "production")
+  labs(y = "production", x = "habitat", colour = "gene")
 
-ggsave(here("figures", "Fig_S4.pdf"), height = 4, width = 8)
+ggsave(here("figures", "Fig_S5.pdf"), height = 4, width = 8)
 ```
 
 
-### Fig. S3
+### Fig. S4
 
 Production-richness relationships.
 
@@ -158,18 +158,34 @@ Data %>%
                   group = Antibiotic), fill = "grey", alpha = 0.2)+
   facet_wrap(~Antibiotic, scales = "free_y")+
   theme_bw()+
-  labs(y = "production")
+  labs(y = "production", x = "richness")
 
 
-ggsave(here("figures", "Fig_S3.pdf"), height = 4, width = 8)
+ggsave(here("figures", "Fig_S4.pdf"), height = 4, width = 8)
+
+```
+### power-fit statistics
+```{r}
+
+Data %>% 
+  na.omit() %>% 
+  group_by(Antibiotic) %>%
+  nest() %>% 
+  mutate(power_fit = map(data, ~lm(log(GrowthYield) ~ log(Richness), data = .))) %>% 
+  mutate(power_fit = map(power_fit, tidy)) %>% 
+  unnest(cols = power_fit) %>% 
+  filter(term == "log(Richness)") %>% 
+  select(Antibiotic, estimate, statistic, p.value) %>% 
+  mutate_if(is.numeric, signif, digits = 3)
+
 
 ```
 
-### Fig. S5. 
+### Fig. S6. 
 
 Highlighting (in green) which strain is included in which combination in each environment.
 
-In Figure S3, we sho the BEF realtionship in each environment. Each point in that figure represents a replicate of either a single strain (Richness = 1) or a combination of strains (Richness 2 -5). All possible species combinations are present. 
+In Figure S4, we sho the BEF realtionship in each environment. Each point in that figure represents a replicate of either a single strain (Richness = 1) or a combination of strains (Richness 2 -5). All possible species combinations are present. 
 
 In this figure we highlight for each strain what species combination it is part of. This highlights some obvious patterns of positive and negative slelection effects were the mixture performance depends strongly on the presence or absence of a particular strain in a particular environemnt. 
 
@@ -206,7 +222,7 @@ plots[[i]] <-
   
 }
 
-ggsave(file = here("figures", "Fig_S5.pdf"), 
+ggsave(file = here("figures", "Fig_S6.pdf"), 
        arrangeGrob(grobs = plots, ncol = 2), 
        width = 16, height = 12 )  ## save plot
 
