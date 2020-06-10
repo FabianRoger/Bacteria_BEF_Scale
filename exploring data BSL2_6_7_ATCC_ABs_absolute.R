@@ -25,7 +25,6 @@ compiled_tet_trim<- read_delim("Data/181019_BSL2-6-7_Tet-0.3_Tet-0.3_Trim-0.25_T
 compiled_con<- read_delim("Data/181019_BSL2-6-7_Con_Con_Non_Non_M9_Tyrion_compiled.csv", delim = ",")
 
 #extract 
-
 dat<- bind_rows(compiled_cam_kan, compiled_tet_trim)
 dat$Plate<- as.character(dat$Plate)
 dat$Position<- as.character(gsub("^._","",dat$Position))
@@ -78,11 +77,11 @@ dat_filt %>%
   filter(diff < 10) %>% 
   group_by(Condition) %>% 
   mutate(rank_diff = rank(diff)) %>% 
-  ggplot(aes(x = diff, y = rank_diff)) +
+  ggplot(aes(x = diff, y = rank_diff))+
   facet_wrap(~Condition)+
   geom_point()
 
-#filter out all strains with differences lareger than a factor of 2.5 between replicate plates
+#filter out all strains with differences larger than a factor of 2.5 between replicate plates
 #calculate mean value between plates
 
 dat_filt <- 
