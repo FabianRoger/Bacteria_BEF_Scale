@@ -98,6 +98,16 @@ Data %>%
   mutate(Richness = nchar(gene)) 
 ```
 
+## exclude strain "a"
+This part is a sensitivity analysis. 
+It excludes strain "a" which has strong negtaive effects on the other strains in mixtures. 
+to run it set eval = TRUE
+```{r, eval = FALSE}
+Data <- 
+Data %>% 
+  filter(!grepl("a", gene))
+```
+
 
 ## exploratory graphs
 
@@ -126,7 +136,7 @@ Data %>%
   theme_bw()+
   guides(colour = guide_legend(override.aes = list(size = 4, alpha = 1)))+
   scale_color_manual(values = viridis(6)[1:5])+
-  labs(y = "production", x = "habitat", colour = "gene")
+  labs(y = "production", x = "habitat", colour = "strain")
 
 ggsave(here("figures", "Fig_S5.pdf"), height = 4, width = 8)
 ```
