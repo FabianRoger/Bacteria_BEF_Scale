@@ -455,8 +455,6 @@ lapply(1:N, function(x) {Traits[1:nrow(Traits), 1:ncol(Traits)] <-
   runif( n = prod( dim( Traits)), 0, 1)
 return(Traits)})
 
-
-
 ```
 
 
@@ -617,5 +615,36 @@ Results %>%
 ggsave(plot = p, filename = here("figures", "Fig_S3.pdf"), width = 6, height = 3)
 
 p
+```
+
+##species specialisation
+```{r}
+Species_specialisation <- 
+  lapply(Trait_list, function(x) {
+    apply(x, 1, function(y){
+      which(y == max(y))
+    })
+  }) %>% 
+  lapply(., function(x) length(unique(x))/length(x)) %>% 
+  unlist()
+
+Species_specialisation <- 
+  lapply(Trait_list, function(x) {
+    apply(x, 1, function(y){ y / max(y)}) %>%
+        t() %>%
+        dist(method = "eu") %>%
+        sum()
+    }) %>% 
+  unlist()
+  
+tibble(spec_spec = Species_specialisation, 
+       transgressive = Results$transgressive) %>% 
+  ggplot(aes(x = spec_spec, y = transgressive))+
+  #geom_beeswarm(shape = 21, fill = NA, colour = "#a50f15")+
+  geom_point(shape = 21, fill = NA, colour = "#a50f15")+
+  geom_smooth(se = FALSE, method = "lm", colour = "black", size = 0.5)+
+  theme_bw()+
+  labs(x = "species specialisation index", y = "transgressive overyielding ~ scale\n(slope)")
+
 ```
 
