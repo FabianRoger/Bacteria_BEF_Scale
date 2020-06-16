@@ -12,7 +12,6 @@ library(broom)
 library(forcats)
 library(readr)
 library(ggplot2)
-library(RColorBrewer)
 library(viridis)
 library(purrr)
 library(gridExtra)
@@ -98,14 +97,26 @@ Data %>%
   mutate(Richness = nchar(gene)) 
 ```
 
-## exclude strain "a"
-This part is a sensitivity analysis. 
+##sensitivity analysis 
+
+This part is a sensitivity analysis, producing Fig S7.
 It excludes strain "a" which has strong negtaive effects on the other strains in mixtures. 
-to run it set eval = TRUE
-```{r, eval = FALSE}
+To run the code and prodcue Fig S7, set `Sens_analysis = TRUE`
+
+Note that all the code will be executed when `Sens_analysis = TRUE` but the other figures will not be exported. 
+```{r}
+
+Sens_analysis = FALSE
+#Sens_analysis = TRUE
+
+if(Sens_analysis){
+  
 Data <- 
 Data %>% 
   filter(!grepl("a", gene))
+
+}
+
 ```
 
 
@@ -138,7 +149,9 @@ Data %>%
   scale_color_manual(values = viridis(6)[1:5])+
   labs(y = "production", x = "habitat", colour = "strain")
 
+if(!Sens_analysis){
 ggsave(here("figures", "Fig_S5.pdf"), height = 4, width = 8)
+}
 ```
 
 
@@ -170,8 +183,9 @@ Data %>%
   theme_bw()+
   labs(y = "production", x = "richness")
 
-
+if(!Sens_analysis){
 ggsave(here("figures", "Fig_S4.pdf"), height = 4, width = 8)
+}
 
 ```
 ### power-fit statistics
@@ -191,7 +205,7 @@ Data %>%
 
 ```
 
-### Fig. S6. 
+### Fig. S6/S7. 
 
 Highlighting (in green) which strain is included in which combination in each environment.
 
@@ -232,9 +246,19 @@ plots[[i]] <-
   
 }
 
+#Fig S6 (with all strains)
+if(!Sens_analysis){
 ggsave(file = here("figures", "Fig_S6.pdf"), 
        arrangeGrob(grobs = plots, ncol = 2), 
-       width = 16, height = 12 )  ## save plot
+       width = 16, height = 12 )
+}
+
+#Fig S7 (without strain a)
+if(Sens_analysis){
+ggsave(file = here("figures", "Fig_S7.pdf"), 
+       arrangeGrob(grobs = plots, ncol = 2), 
+       width = 16, height = 12 )
+}
 
 plots
 ```
@@ -423,7 +447,9 @@ env_values %>%
   #coord_fixed(ratio = 1/2e8)+
   NULL
 
+if(!Sens_analysis){
 save("Fig_2_d", file = here("figures", "Fig_2_d.RData"))
+}
 
 Fig_2_d
 ```
@@ -532,8 +558,9 @@ env_metrics %>%
   #coord_fixed(ratio = 2)+
   NULL
 
-
+if(!Sens_analysis){
 save("Fig_2_e", file = here("figures", "Fig_2_e.RData"))
+}
 
 Fig_2_e
 ```
@@ -571,8 +598,10 @@ env_metrics %>%
   #coord_fixed(ratio = 2/0.4)+
   NULL
 
+if(!Sens_analysis){
 save("Fig_2_f", file = here("figures", "Fig_2_f.RData"))
-
+}
+  
 Fig_2_f
 ```
 
