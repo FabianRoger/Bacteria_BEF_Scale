@@ -470,12 +470,12 @@ table_s1 <- left_join(match_names,
 write_csv(table_s1, here("figures/table_s1.csv") )
 
 
-### fig. S7, 8, 9
+### fig. S8, 9, 10
 
 # in these graphs, we plot the relationship between scale and: 
-# (1) the bef-slope (fig. S7); 
-# (2) average overyielding (fig. S8) and; 
-# (3) transgressive overyielding (fig. S9) for each study included in the literature synthesis
+# (1) the bef-slope (fig. S8); 
+# (2) average overyielding (fig. S9) and; 
+# (3) transgressive overyielding (fig. S10) for each study included in the literature synthesis
 
 effects <- unique(meta_scale_raw$effect_type)
 effect_names <- c("BEF-slope", "ave-OY", "trans-OY")
