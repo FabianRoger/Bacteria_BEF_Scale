@@ -10,6 +10,8 @@ library(cowplot)
 ```
 #Figure 2
 
+To produce this figure, you must run the code for Figure 2 a-c in Siumlations.Rmd and the code for Figure 2 d-f in Analysis.nb.Rmd. The `Scenario` in Simulations must be set to 3 (weighted mean) and the sensitivity analysis  (Analysis) must be toogled of. 
+
 load figures
 ```{r}
 
@@ -77,6 +79,9 @@ ggsave(plot = p1, filename = here("figures", "Fig_2.pdf"), width = 9, height = 6
 ```
 
 #Figure S3
+
+To produce this figure you must run the code for Figure 2 a-c in Simulations.Rmd with `Scenario` set to 1 & 2 (dominance and mean). 
+
 load figures
 ```{r}
 load(here("figures", "Fig_S3_a.RData"))
@@ -143,6 +148,8 @@ ggsave(plot = p1, filename = here("figures", "Fig_S3.pdf"), width = 9, height = 
 ```
 
 #Figure S12
+
+note that to produce this figure wou must run the code in Analysis.nb.Rmd both with and without the sensitivity analysis
 
 load figures
 ```{r}
