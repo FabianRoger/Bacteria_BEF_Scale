@@ -106,8 +106,8 @@ To run the code and prodcue Fig S7, set `Sens_analysis = TRUE`
 Note that all the code will be executed when `Sens_analysis = TRUE` but the other figures will not be exported. 
 ```{r}
 
-Sens_analysis = FALSE
-#Sens_analysis = TRUE
+#Sens_analysis = FALSE
+Sens_analysis = TRUE
 
 if(Sens_analysis){
   
@@ -116,6 +116,30 @@ Data %>%
   filter(!grepl("a", gene))
 
 }
+
+```
+
+### species specialisation
+
+This calculates the species specialisation in our experiment, as defined in the main text. Note that it doesn't change with the exclusion of strain a, as this strain doesn't have the highest productivity any environment
+
+```{r}
+
+#which strains dominate
+dom_strains <- 
+Data %>% 
+  filter(Richness == 1) %>% 
+  group_by(gene, Antibiotic) %>% 
+  summarise(GrowthYield = mean(GrowthYield)) %>% 
+  group_by(Antibiotic) %>% 
+  filter(GrowthYield == max(GrowthYield)) %>% 
+  pull(gene)
+
+#species specialistaion
+ssp <- length(unique(dom_strains)) / length(dom_strains)
+
+#standardize between 0 and 1
+(ssp-(1/length(dom_strains)))/(1-(1/length(dom_strains)))
 
 ```
 
@@ -601,6 +625,10 @@ env_metrics %>%
 if(!Sens_analysis){
 save("Fig_2_f", file = here("figures", "Fig_2_f.RData"))
 }
+
+if(Sens_analysis){
+save("Fig_2_f", file = here("figures", "Fig_S_12.RData"))
+}
   
 Fig_2_f
 ```
@@ -613,7 +641,7 @@ env_metrics %>%
   filter(metric == "transgressive") %>% 
   lm(value ~ envnum, data = .) %>% 
   tidy %>% 
-  mutate_if(is.numeric, round, 3)
+  mutate_if(is.numeric, round, 4)
 
 ```
 
