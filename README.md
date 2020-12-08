@@ -6,7 +6,7 @@ This repository contains the code for the simulations and analysis for the artic
 preliminary citation: 
 
 > Biodiversity and ecosystem functioning across gradients in spatial scale
-Lars Gamfeldt, Fabian Roger, Martin Palm, James Hagan, Jonas Warringer, Anne Farewell
+Lars Gamfeldt, Fabian Roger, James Hagan, Martin Palm, Jonas Warringer, Anne Farewell
 
 
 To reproduce the analysis for the simulations and the bacteria microcosm experiment, download the repository and execute the scripts:
@@ -26,27 +26,25 @@ These scripts cannot be run as the necessary data are not provided. The first sc
 The second script documents how the strains have been selected to maximize variance in growth performance across environments. The script is for internal documentation. These data are not public. 
 
 
-To reproduce the analysis for the meta-analysis, download the repository and execute the script:
+To reproduce the literature synthesis (meta-analysis), download the repository and execute the script:
 
-+ Bef_scale_synthesis_script.R
++ meta_analysis_script.R
 
-This script reproduces all figures and tables associated with the meta-analysis from the raw data files, namely:
+For the script to run, an additional script needs to be in the same working directory as the meta_analysis_script.R:
 
-+ Fig. 3Ai - iii
-+ Fig. 3B
-+ Fig. S8
-+ Fig. S9
-+ Fig. S10
-+ Table S1
-+ Table S2
-+ Table S3
-+ Table S4
++ function_plotting_theme.R
 
-The script also reproduces additional statistics and values reported only in text
+This script reproduces all figures and tables associated with the meta-analysis from the raw data files that are downloaded directly from figshare.
 
-In addition, the script examines the data assessment file which was used to select papers for the meta-analysis via various inclusion/exclusion criteria.
+The script also reproduces additional statistics and values reported only in text.
 
-All data are downloaded directly within the script from figshare.com. The meta-data for the two datasets used can be found at: https://ndownloader.figshare.com/files/22918043
+To examine the data assessment file and determine how we selected papers papers, decided to contact authors etc., the following script needs to be executed:
+
++ meta_analysis_data_assessment_script.R
+
+All raw data for the literature synthesis (meta-analysis) are downloaded directly within the script from figshare.com. 
+
+The meta-data for the two datasets used can be found at: https://ndownloader.figshare.com/files/22918043
 
 
 
