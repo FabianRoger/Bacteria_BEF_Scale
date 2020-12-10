@@ -347,8 +347,8 @@ f.3 <-
   ggarrange(f.3a, f.3b, f.3c, f.3d, ncol = 2, nrow = 2,
             widths = c(1.3, 1) )
 
-# ggsave(filename = here("figures/fig_3.jpg"), 
-       # plot = f.3, width = 17.3, height = 15, units = "cm")
+ggsave(filename = here("figures/fig_3.jpg"), 
+       plot = f.3, width = 17.3, height = 15, units = "cm")
 
 
 # is the trangressive overyielding result robust to outliers?
@@ -508,8 +508,8 @@ f.4 <-
         legend.text = element_text(size = 8),
         legend.title = element_text(size = 9))
 
-# ggsave(filename = here("figures/fig_4.jpg"), 
-       # plot = f.4, width = 8, height = 7, units = "cm")
+ggsave(filename = here("figures/fig_4.jpg"), 
+       plot = f.4, width = 14, height = 12, units = "cm")
 
 
 
