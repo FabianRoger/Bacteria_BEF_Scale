@@ -272,9 +272,16 @@ wc.test <- do.call(rbind, wc.test)
 # correct the p.values for multiple testing using bonferroni
 wc.test$p.value.bf <- p.adjust(wc.test$p.value, method = "bonferroni")
 
+
 # load the ggplot and ggpubr libraries for plotting
 library(ggplot2)
 library(ggpubr)
+library(viridis)
+
+
+# Ecology (journal) figure guidelines:
+# (1) portrait layout (maximum 6 inches (15.24 cm) wide x 8 inches (20.32 cm) high)
+# (2) landscape layout (maximum 8.75 inches (22.225 cm) wide x 5.25 inches (13.335 cm) high)
 
 
 ### fig. 3
@@ -283,22 +290,33 @@ library(ggpubr)
 e.g.s <- "Blake_and_Duffy_2010_one"
 e.g.s.l <- "Blake and Duffy 2010"
 
+# get a middle viridis colour
+v.c <- viridis(n = 1, alpha = 1, begin = 0.5, end = 0.5, option = "C")
+v.c.1 <- viridis(n = 1, alpha = 1, begin = 0.7, end = 0.7, option = "C")
+
 # fig. 3a
 f.3a <- 
-  ggplot(data = est.cov,
-         mapping = aes(x = l.rr.est)) +
-  geom_histogram(alpha = 0.3, binwidth = 0.015, colour = "black") +
-  geom_vline(xintercept = 0, linetype = "dashed", size = 1) +
-  geom_vline(xintercept = median(est.cov$l.rr.est), colour = "red", size = 1) +
-  geom_point(mapping = aes(x = est.cov[est.cov$Experiment_ID == e.g.s, ]$l.rr.est, y = 0 ), 
-             fill = "#3399FF", size = 3.5, shape = 25) +
-  annotate(geom = "text", x = 0.25, y = 10.5, 
-           label = paste("W", wc.test[wc.test$response == "l.rr.est", ]$w.stat, sep = " = ")) +
-  annotate(geom = "text", x = 0.255, y = 9.5, 
-           label = paste("P", round(wc.test[wc.test$response == "l.rr.est", ]$p.value.bf, 3), sep = " = ")) +
-  xlab("log(mixture/monoculture) ~ scale (est.)") +
+  ggplot(data = filter(est.cov, Experiment_ID != e.g.s),
+       mapping = aes(x = 0.9, y = l.rr.est)) +
+  geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
+  geom_jitter(width = 0.04, size = 2) +
+  scale_x_continuous(limits = c(0.85, 1.05)) +
+  geom_point(mapping = aes(x = 1, y = est.cov[est.cov$Experiment_ID == e.g.s, ]$l.rr.est ), 
+             colour = v.c, size = 3.5, shape = 16) +
+  geom_point(mapping = aes(x = 0.9, y = median(est.cov$l.rr.est)),
+             shape = 23, size = 3.5, fill = v.c.1, colour = "black") +
+  annotate(geom = "text", x = 1.025, y = 0.25, 
+           label = paste("W", wc.test[wc.test$response == "l.rr.est", ]$w.stat, sep = " = "),
+           size = 2.5) +
+  annotate(geom = "text", x = 1.025, y = 0.2, 
+           label = paste("P", round(wc.test[wc.test$response == "l.rr.est", ]$p.value.bf, 3), sep = " = "),
+           size = 2.5) +
+  ylab("log(mix/mono) ~ scale (est.)") +
+  xlab("") +
   ggtitle(label = "") +
-  theme_meta()
+  theme_meta() +
+  theme(axis.text.x = element_text(colour = "white"),
+        axis.ticks.x = element_blank())
 
 # fig. 3b
 f.3b <- 
@@ -306,29 +324,39 @@ f.3b <-
   filter(Experiment_ID == e.g.s ) %>%
   ggplot(data = .,
          mapping = aes(x = environments, y = l.rr)) +
-  geom_smooth(method = "lm", se = FALSE, colour = "#3399FF", size = 0.75) +
-  geom_jitter(width = 0.01, size = 2.5, colour = "#3399FF") +
+  geom_smooth(method = "lm", se = FALSE, colour = v.c, size = 0.75) +
+  geom_jitter(width = 0.01, size = 2, 
+              colour = v.c, shape = 16) +
   xlab("scale") +
-  ylab("log(mixture/monoculture)") +
+  ylab("log(mix/mono)") +
   ggtitle(label = e.g.s.l) +
   theme_meta()
 
 # fig. 3c
 f.3c <- 
-  ggplot(data = est.cov,
-         mapping = aes(x = t.oy.est)) +
-  geom_histogram(alpha = 0.3, binwidth = 0.017, colour = "black") +
-  geom_vline(xintercept = 0, linetype = "dashed", size = 1) +
-  geom_vline(xintercept = median(est.cov$t.oy.est), colour = "red", size = 1) +
-  geom_point(mapping = aes(x = est.cov[est.cov$Experiment_ID == e.g.s, ]$t.oy.est, y = 0 ), 
-             fill = "#3399FF", size = 3.5, shape = 25) +
-  annotate(geom = "text", x = 0.44, y = 7.5,
-           label = paste("W", wc.test[wc.test$response == "t.oy.est", ]$w.stat, sep = " = ")) +
-  annotate(geom = "text", x = 0.445, y = 6.75, 
-           label = paste("P", round(wc.test[wc.test$response == "t.oy.est", ]$p.value.bf, 3), sep = " = ")) +
-  xlab("trans. OY ~ scale (est.)") +
+  ggplot(data = filter(est.cov, Experiment_ID != e.g.s),
+       mapping = aes(x = 0.9, y = t.oy.est)) +
+  geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
+  geom_jitter(width = 0.04, size = 2) +
+  scale_x_continuous(limits = c(0.85, 1.05)) +
+  scale_y_continuous(limits = c(-0.1, 0.5)) +
+  geom_point(mapping = aes(x = 1, y = est.cov[est.cov$Experiment_ID == e.g.s, ]$t.oy.est ), 
+             colour = v.c, size = 3.5, shape = 16) +
+  geom_point(mapping = aes(x = 0.9, y = median(est.cov$t.oy.est)),
+             shape = 23, size = 3.5, fill = v.c.1, colour = "black") +
+  annotate(geom = "text", x = 1.025, y = 0.45, 
+           label = paste("W", wc.test[wc.test$response == "t.oy.est", ]$w.stat, sep = " = "),
+           size = 2.5) +
+  annotate(geom = "text", x = 1.025, y = 0.4, 
+           label = paste("P", round(wc.test[wc.test$response == "t.oy.est", ]$p.value.bf, 3), sep = " = "),
+           size = 2.5) +
+  ylab("trans. OY ~ scale (est.)") +
+  xlab("") +
   ggtitle(label = "") +
-  theme_meta()
+  theme_meta() +
+  theme(axis.text.x = element_text(colour = "white"),
+        axis.ticks.x = element_blank())
+
 
 # fig. 3d
 f.3d <- 
@@ -336,8 +364,9 @@ f.3d <-
   filter(Experiment_ID == e.g.s) %>%
   ggplot(data = .,
          mapping = aes(x = environments, y = t.oy)) +
-  geom_smooth(method = "lm", se = FALSE, colour = "#3399FF", size = 0.75) +
-  geom_jitter(width = 0.01, size = 2.5, colour = "#3399FF") +
+  geom_smooth(method = "lm", se = FALSE, colour = v.c, size = 0.75) +
+  geom_jitter(width = 0.01, size = 2, 
+              colour = v.c, shape = 16) +
   xlab("scale") +
   ylab("trans. OY") +
   ggtitle(label = e.g.s.l) +
@@ -348,7 +377,7 @@ f.3 <-
             widths = c(1.3, 1) )
 
 ggsave(filename = here("figures/fig_3.jpg"), 
-       plot = f.3, width = 17.3, height = 15, units = "cm")
+       plot = f.3, width = 11, height = 11, units = "cm")
 
 
 # is the trangressive overyielding result robust to outliers?
