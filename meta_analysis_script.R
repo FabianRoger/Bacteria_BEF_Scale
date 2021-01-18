@@ -298,13 +298,15 @@ v.c.1 <- viridis(n = 1, alpha = 1, begin = 0.7, end = 0.7, option = "C")
 f.3a <- 
   ggplot(data = filter(est.cov, Experiment_ID != e.g.s),
        mapping = aes(x = 0.9, y = l.rr.est)) +
-  geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
-  geom_jitter(width = 0.04, size = 2) +
+  geom_hline(yintercept = 0, linetype = "dashed", size = 0.25) +
+  geom_point(size = 2, position = position_jitter(w = 0.02, h = 0), 
+             shape = 16, alpha = 0.5) +
   scale_x_continuous(limits = c(0.85, 1.05)) +
-  geom_point(mapping = aes(x = 1, y = est.cov[est.cov$Experiment_ID == e.g.s, ]$l.rr.est ), 
-             colour = v.c, size = 3.5, shape = 16) +
-  geom_point(mapping = aes(x = 0.9, y = median(est.cov$l.rr.est)),
-             shape = 23, size = 3.5, fill = v.c.1, colour = "black") +
+  geom_point(mapping = aes(x = 0.91, y = est.cov[est.cov$Experiment_ID == e.g.s, ]$l.rr.est ), 
+             colour = v.c, size = 2, shape = 16) +
+  # geom_point(mapping = aes(x = 0.9, y = median(est.cov$l.rr.est)),
+             # shape = 21, size = 3.5, fill = v.c.1, colour = "black") +
+  geom_hline(yintercept = median(est.cov$l.rr.est), size = 0.5, colour = v.c.1) +
   annotate(geom = "text", x = 1.025, y = 0.25, 
            label = paste("W", wc.test[wc.test$response == "l.rr.est", ]$w.stat, sep = " = "),
            size = 2.5) +
@@ -336,14 +338,16 @@ f.3b <-
 f.3c <- 
   ggplot(data = filter(est.cov, Experiment_ID != e.g.s),
        mapping = aes(x = 0.9, y = t.oy.est)) +
-  geom_hline(yintercept = 0, linetype = "dashed", size = 1) +
-  geom_jitter(width = 0.04, size = 2) +
+  geom_hline(yintercept = 0, linetype = "dashed", size = 0.25) +
+  geom_point(size = 2, position = position_jitter(w = 0.02, h = 0), 
+              shape = 16, alpha = 0.5) +
   scale_x_continuous(limits = c(0.85, 1.05)) +
   scale_y_continuous(limits = c(-0.1, 0.5)) +
-  geom_point(mapping = aes(x = 1, y = est.cov[est.cov$Experiment_ID == e.g.s, ]$t.oy.est ), 
-             colour = v.c, size = 3.5, shape = 16) +
-  geom_point(mapping = aes(x = 0.9, y = median(est.cov$t.oy.est)),
-             shape = 23, size = 3.5, fill = v.c.1, colour = "black") +
+  geom_point(mapping = aes(x = 0.91, y = est.cov[est.cov$Experiment_ID == e.g.s, ]$t.oy.est ), 
+             colour = v.c, size = 2, shape = 16) +
+  # geom_point(mapping = aes(x = 0.9, y = median(est.cov$t.oy.est)),
+             # shape = 21, size = 3.5, fill = v.c.1, colour = "black") +
+  geom_hline(yintercept = median(est.cov$t.oy.est), size = 0.5, colour = v.c.1) +
   annotate(geom = "text", x = 1.025, y = 0.45, 
            label = paste("W", wc.test[wc.test$response == "t.oy.est", ]$w.stat, sep = " = "),
            size = 2.5) +
@@ -356,7 +360,6 @@ f.3c <-
   theme_meta() +
   theme(axis.text.x = element_text(colour = "white"),
         axis.ticks.x = element_blank())
-
 
 # fig. 3d
 f.3d <- 
