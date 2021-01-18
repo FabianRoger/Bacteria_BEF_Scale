@@ -438,6 +438,26 @@ exp.vars <- list(c("species.specialisation", "overyielding.m", "function.cv", "o
                  c("overyielding.m"))
 
 # run this set of models with all the data
+
+# (1) the BEF slope
+bef.est.exp <- lm.scale(data = est.cov, slope = "l.rr.est", e.vars = exp.vars, outliers = "Gamfeldt_et_al_2005_one")
+
+bef.est.exp  %>% 
+  select(model, term, r.squared, AIC) %>%
+  group_by(model, r.squared, AIC) %>%
+  summarise(terms = paste(term, collapse = "+")) %>% 
+  ungroup() %>%
+  arrange(AIC) %>% 
+  select(terms, r.squared, AIC) %>%
+  mutate(delta_AIC =  AIC - (min(AIC))) %>%
+  mutate(AIC_wt_start = exp(1)^(-0.5*delta_AIC)) %>%
+  mutate(AIC_wt = AIC_wt_start/sum(AIC_wt_start)) %>%
+  select(-AIC_wt_start) %>%
+  View()
+
+
+
+# (2) transgressive overyielding
 t.oy.exp <- lm.scale(data = est.cov, slope = "t.oy.est", e.vars = exp.vars, outliers = NA)
 
 # clean this output
