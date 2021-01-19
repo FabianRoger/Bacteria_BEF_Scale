@@ -279,10 +279,6 @@ library(ggpubr)
 library(viridis)
 
 
-# Ecology (journal) figure guidelines:
-# (1) portrait layout (maximum 6 inches (15.24 cm) wide x 8 inches (20.32 cm) high)
-# (2) landscape layout (maximum 8.75 inches (22.225 cm) wide x 5.25 inches (13.335 cm) high)
-
 
 ### fig. 3
 
@@ -294,31 +290,44 @@ e.g.s.l <- "Blake and Duffy 2010"
 v.c <- viridis(n = 1, alpha = 1, begin = 0.5, end = 0.5, option = "C")
 v.c.1 <- viridis(n = 1, alpha = 1, begin = 0.7, end = 0.7, option = "C")
 
+f.3a.dat <- 
+  est.cov %>%
+  rename(`ln(mix/mono) ~ scale` = l.rr.est,
+         `trans. OY ~ scale` = t.oy.est) %>%
+  pivot_longer(cols = c('ln(mix/mono) ~ scale', 'trans. OY ~ scale'),
+               names_to = "slope",
+               values_to = "est")
+
+f.3a.m <- 
+  f.3a.dat %>%
+  group_by(slope) %>%
+  summarise(est = median(est), .groups = "drop")
+
 # fig. 3a
 f.3a <- 
-  ggplot(data = filter(est.cov, Experiment_ID != e.g.s),
-       mapping = aes(x = 0.9, y = l.rr.est)) +
+  ggplot(data = filter(f.3a.dat, Experiment_ID != e.g.s),
+       mapping = aes(x = slope, y = (log(1+est)) )) +
   geom_hline(yintercept = 0, linetype = "dashed", size = 0.25) +
-  geom_point(size = 2, position = position_jitter(w = 0.02, h = 0), 
+  geom_point(size = 2, position = position_jitter(w = 0.04, h = 0), 
              shape = 16, alpha = 0.5) +
-  scale_x_continuous(limits = c(0.85, 1.05)) +
-  geom_point(mapping = aes(x = 0.91, y = est.cov[est.cov$Experiment_ID == e.g.s, ]$l.rr.est ), 
+  geom_point(data = f.3a.m,
+             colour = "black", fill = "white", size = 2.5, shape = 23) +
+  geom_point(data = filter(f.3a.dat, Experiment_ID == e.g.s), 
+             position = position_nudge(x = 0.075),
              colour = v.c, size = 2, shape = 16) +
-  # geom_point(mapping = aes(x = 0.9, y = median(est.cov$l.rr.est)),
-             # shape = 21, size = 3.5, fill = v.c.1, colour = "black") +
-  geom_hline(yintercept = median(est.cov$l.rr.est), size = 0.5, colour = v.c.1) +
-  annotate(geom = "text", x = 1.025, y = 0.25, 
-           label = paste("W", wc.test[wc.test$response == "l.rr.est", ]$w.stat, sep = " = "),
-           size = 2.5) +
-  annotate(geom = "text", x = 1.025, y = 0.2, 
-           label = paste("P", round(wc.test[wc.test$response == "l.rr.est", ]$p.value.bf, 3), sep = " = "),
-           size = 2.5) +
-  ylab("log(mix/mono) ~ scale (est.)") +
+  # annotate(geom = "text", x = 1.025, y = 0.25, 
+           # label = paste("W", wc.test[wc.test$response == "l.rr.est", ]$w.stat, sep = " = "),
+           # size = 2.5) +
+  # annotate(geom = "text", x = 1.025, y = 0.2, 
+           # label = paste("P", round(wc.test[wc.test$response == "l.rr.est", ]$p.value.bf, 3), sep = " = "),
+           # size = 2.5) +
+  ylab("slope est.") +
   xlab("") +
   ggtitle(label = "") +
-  theme_meta() +
-  theme(axis.text.x = element_text(colour = "white"),
-        axis.ticks.x = element_blank())
+  theme_meta() # +
+  # theme(axis.text.x = element_text(angle = 45, vjust = 0.8))
+
+f.3a
 
 # fig. 3b
 f.3b <- 
@@ -329,40 +338,14 @@ f.3b <-
   geom_smooth(method = "lm", se = FALSE, colour = v.c, size = 0.75) +
   geom_jitter(width = 0.01, size = 2, 
               colour = v.c, shape = 16) +
-  xlab("scale") +
-  ylab("log(mix/mono)") +
+  xlab("") +
+  ylab("ln(mix/mono)") +
   ggtitle(label = e.g.s.l) +
   theme_meta()
 
+
 # fig. 3c
 f.3c <- 
-  ggplot(data = filter(est.cov, Experiment_ID != e.g.s),
-       mapping = aes(x = 0.9, y = t.oy.est)) +
-  geom_hline(yintercept = 0, linetype = "dashed", size = 0.25) +
-  geom_point(size = 2, position = position_jitter(w = 0.02, h = 0), 
-              shape = 16, alpha = 0.5) +
-  scale_x_continuous(limits = c(0.85, 1.05)) +
-  scale_y_continuous(limits = c(-0.1, 0.5)) +
-  geom_point(mapping = aes(x = 0.91, y = est.cov[est.cov$Experiment_ID == e.g.s, ]$t.oy.est ), 
-             colour = v.c, size = 2, shape = 16) +
-  # geom_point(mapping = aes(x = 0.9, y = median(est.cov$t.oy.est)),
-             # shape = 21, size = 3.5, fill = v.c.1, colour = "black") +
-  geom_hline(yintercept = median(est.cov$t.oy.est), size = 0.5, colour = v.c.1) +
-  annotate(geom = "text", x = 1.025, y = 0.45, 
-           label = paste("W", wc.test[wc.test$response == "t.oy.est", ]$w.stat, sep = " = "),
-           size = 2.5) +
-  annotate(geom = "text", x = 1.025, y = 0.4, 
-           label = paste("P", round(wc.test[wc.test$response == "t.oy.est", ]$p.value.bf, 3), sep = " = "),
-           size = 2.5) +
-  ylab("trans. OY ~ scale (est.)") +
-  xlab("") +
-  ggtitle(label = "") +
-  theme_meta() +
-  theme(axis.text.x = element_text(colour = "white"),
-        axis.ticks.x = element_blank())
-
-# fig. 3d
-f.3d <- 
   l.df %>%
   filter(Experiment_ID == e.g.s) %>%
   ggplot(data = .,
@@ -375,12 +358,23 @@ f.3d <-
   ggtitle(label = e.g.s.l) +
   theme_meta()
 
-f.3 <- 
-  ggarrange(f.3a, f.3b, f.3c, f.3d, ncol = 2, nrow = 2,
-            widths = c(1.3, 1) )
+f.3bc <- 
+  ggarrange(f.3b, f.3c, ncol = 1, nrow = 2,
+            labels = c("b", "c"),
+            font.label = list(size = 10, color = "black", face = "bold", family = NULL))
 
+
+f.3 <- 
+  ggarrange(f.3a, f.3bc, ncol = 2, nrow = 1,
+            widths = c(1.4, 1),
+            labels = c("a", "", ""),
+            font.label = list(size = 10, color = "black", face = "bold", family = NULL))
+
+# Ecology (journal) figure guidelines:
+# (1) portrait layout (maximum 6 inches (15.24 cm) wide x 8 inches (20.32 cm) high)
+# (2) landscape layout (maximum 8.75 inches (22.225 cm) wide x 5.25 inches (13.335 cm) high)
 ggsave(filename = here("figures/fig_3.jpg"), 
-       plot = f.3, width = 11, height = 11, units = "cm")
+       plot = f.3, width = 14, height = 12, units = "cm")
 
 
 # is the trangressive overyielding result robust to outliers?
@@ -391,7 +385,8 @@ est.cov %>%
               mu = 0, paired = FALSE, exact = FALSE, conf.int = FALSE)
 
 
-### how is is t.oy.est related to covariates?
+
+### how is lrr.est and t.oy.est related to covariates?
 
 # set up a function to run different models that can then be compared
 lm.scale <- function(data, slope, e.vars, outliers = NA) {
@@ -440,8 +435,9 @@ exp.vars <- list(c("species.specialisation", "overyielding.m", "function.cv", "o
 # run this set of models with all the data
 
 # (1) the BEF slope
-bef.est.exp <- lm.scale(data = est.cov, slope = "l.rr.est", e.vars = exp.vars, outliers = "Gamfeldt_et_al_2005_one")
+bef.est.exp <- lm.scale(data = est.cov, slope = "l.rr.est", e.vars = exp.vars, outliers = NA)
 
+# clean this output
 bef.est.exp  %>% 
   select(model, term, r.squared, AIC) %>%
   group_by(model, r.squared, AIC) %>%
@@ -454,6 +450,74 @@ bef.est.exp  %>%
   mutate(AIC_wt = AIC_wt_start/sum(AIC_wt_start)) %>%
   select(-AIC_wt_start) %>%
   View()
+
+# write_csv(table.s3, here("figures/Table_S3.csv") )
+
+
+### plot fig.4a
+
+# fit the linear model with the lowest AIC (highest AIC weight)
+bef.est.exp %>%
+  filter(AIC == min(AIC)) %>%
+  pull(term)
+
+lm.beta <- lm(l.rr.est ~ species.specialisation*overyielding.cv, data = est.cov)
+
+# check model predictions
+plot(lm.beta)
+
+# get predicted values from this model
+
+# species.specialisation gradient
+range(est.cov$species.specialisation)
+ssi.g <- 
+  seq(from = min(est.cov$species.specialisation), 
+      to = max(est.cov$species.specialisation), 
+      by = 0.1)
+
+# set three levels of overyielding.m
+range(est.cov$overyielding.cv)
+oy.m.g <- c(5, 35, 70)
+
+# put these values into a data.frame
+g.pred <- expand.grid(species.specialisation = ssi.g, overyielding.cv = oy.m.g)
+
+# get the predicted values
+g.pred$l.rr.est <- predict(object = lm.beta, newdata = g.pred)
+
+# plot fig. 4
+f.4a <- 
+  est.cov %>%
+  rename(`CV overyielding` = overyielding.cv) %>%
+  ggplot(data = .,
+         mapping = aes(x = species.specialisation, y = l.rr.est, 
+                       colour = `CV overyielding`)) +
+  geom_line(data = rename(g.pred, `CV overyielding` = overyielding.cv), 
+            aes(group = (`CV overyielding`)),
+            size = 0.75) +
+  geom_jitter(width = 0.01, size = 2) +
+  ylab("ln(mix/mono) ~ scale (est.)") +
+  xlab("species specialisation index") +
+  viridis::scale_colour_viridis(option = "C") +
+  # annotate(geom = "text", x = 0.1, y = 0.3, size = 3.5,
+           # label = paste("r^2 == ", round(summary(lm.beta)$r.squared, 2)), parse = TRUE) +
+  guides(color = guide_colourbar(title.position = "top", 
+                                 title.vjust = 1,
+                                 frame.colour = "black", 
+                                 ticks.colour = NA,
+                                 barwidth = 5,
+                                 barheight = 0.3)) +
+  theme_meta() +
+  theme(legend.position = c(0.6, 0.75),
+        legend.direction="horizontal",
+        legend.justification=c(1, 0), 
+        legend.key.width=unit(1, "lines"), 
+        legend.key.height=unit(1, "lines"),
+        # plot.margin = unit(c(3, 1, 0.5, 0.5), "lines"),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 9))
+
+f.4a
 
 
 
@@ -476,7 +540,6 @@ table.s3 <-
 
 # write_csv(table.s3, here("figures/Table_S3.csv") )
 
-
 # re-run this analysis without the large outlier
 t.oy.exp.outlier <- lm.scale(data = est.cov, slope = "t.oy.est", e.vars = exp.vars, outliers = c("Dzialowski_Smith_2008_one"))
 
@@ -497,7 +560,7 @@ table.s4 <-
 # write_csv(table.s4, here("figures/Table_S4.csv") )
 
 
-### plot fig.4
+### plot fig.4b
 
 # fit the linear model with the lowest AIC (highest AIC weight)
 t.oy.exp %>%
@@ -530,7 +593,7 @@ g.pred$t.oy.est <- predict(object = lm.b, newdata = g.pred)
 
 
 # plot fig. 4
-f.4 <- 
+f.4b <- 
   est.cov %>%
   rename("average overyielding" = overyielding.m) %>%
   ggplot(data = .,
@@ -538,18 +601,18 @@ f.4 <-
   geom_line(data = rename(g.pred, "average overyielding" = overyielding.m), 
             aes(group = (`average overyielding`)),
             size = 0.75) +
-  geom_jitter(width = 0.01, size = 3) +
+  geom_jitter(width = 0.01, size = 2) +
   ylab("trans. OY ~ scale (est.)") +
   xlab("species specialisation index") +
-  viridis::scale_colour_viridis() +
-  annotate(geom = "text", x = 0.1, y = 0.35, size = 3.5,
-           label = paste("r^2 == ", round(summary(lm.b)$r.squared, 2)), parse = TRUE) +
+  viridis::scale_colour_viridis(option = "C") +
+  # annotate(geom = "text", x = 0.1, y = 0.5, size = 3.5,
+           # label = paste("r^2 == ", round(summary(lm.b)$r.squared, 2)), parse = TRUE) +
   guides(color = guide_colourbar(title.position = "top", 
                                  title.vjust = 1,
                                  frame.colour = "black", 
                                  ticks.colour = NA,
-                                 barwidth = 10,
-                                 barheight = 0.5)) +
+                                 barwidth = 5,
+                                 barheight = 0.3)) +
   theme_meta() +
   theme(legend.position = c(0.6, 0.75),
         legend.direction="horizontal",
@@ -560,8 +623,23 @@ f.4 <-
         legend.text = element_text(size = 8),
         legend.title = element_text(size = 9))
 
+f.4b
+
+# 
+f.4 <- 
+  ggarrange(f.4a, f.4b, ncol = 2, nrow = 1,
+            widths = c(1, 1),
+            labels = c("a", "b"),
+            font.label = list(size = 10, color = "black", face = "bold", family = NULL))
+f.4
+
+# Ecology (journal) figure guidelines:
+# (1) portrait layout (maximum 6 inches (15.24 cm) wide x 8 inches (20.32 cm) high)
+# (2) landscape layout (maximum 8.75 inches (22.225 cm) wide x 5.25 inches (13.335 cm) high)
+
+# save the output
 ggsave(filename = here("figures/fig_4.jpg"), 
-       plot = f.4, width = 14, height = 12, units = "cm")
+       plot = f.4, width = 15.24, height = 10, units = "cm")
 
 
 
