@@ -468,19 +468,19 @@ plot(lm.beta)
 
 # get predicted values from this model
 
-# species.specialisation gradient
-range(est.cov$species.specialisation)
-ssi.g <- 
-  seq(from = min(est.cov$species.specialisation), 
-      to = max(est.cov$species.specialisation), 
+# cv overyielding gradient
+range(est.cov$overyielding.cv)
+oy.m.g <- 
+  seq(from = min(est.cov$overyielding.cv), 
+      to = max(est.cov$overyielding.cv), 
       by = 0.1)
 
 # set three levels of overyielding.m
-range(est.cov$overyielding.cv)
-oy.m.g <- c(5, 35, 70)
+range(est.cov$species.specialisation)
+ssi.g <- c(0, 0.5, 1)
 
 # put these values into a data.frame
-g.pred <- expand.grid(species.specialisation = ssi.g, overyielding.cv = oy.m.g)
+g.pred <- expand.grid(overyielding.cv = oy.m.g, species.specialisation = ssi.g)
 
 # get the predicted values
 g.pred$l.rr.est <- predict(object = lm.beta, newdata = g.pred)
@@ -488,16 +488,16 @@ g.pred$l.rr.est <- predict(object = lm.beta, newdata = g.pred)
 # plot fig. 4
 f.4a <- 
   est.cov %>%
-  rename(`CV overyielding` = overyielding.cv) %>%
+  rename(`species specialisation` = species.specialisation) %>%
   ggplot(data = .,
-         mapping = aes(x = species.specialisation, y = l.rr.est, 
-                       colour = `CV overyielding`)) +
-  geom_line(data = rename(g.pred, `CV overyielding` = overyielding.cv), 
-            aes(group = (`CV overyielding`)),
+         mapping = aes(x = overyielding.cv, y = l.rr.est, 
+                       colour = `species specialisation`)) +
+  geom_line(data = rename(g.pred, `species specialisation` = species.specialisation), 
+            aes(group = (`species specialisation`)),
             size = 0.75) +
   geom_jitter(width = 0.01, size = 2) +
   ylab("ln(mix/mono) ~ scale (est.)") +
-  xlab("species specialisation index") +
+  xlab("CV overyielding") +
   viridis::scale_colour_viridis(option = "C") +
   # annotate(geom = "text", x = 0.1, y = 0.3, size = 3.5,
            # label = paste("r^2 == ", round(summary(lm.beta)$r.squared, 2)), parse = TRUE) +
@@ -514,8 +514,8 @@ f.4a <-
         legend.key.width=unit(1, "lines"), 
         legend.key.height=unit(1, "lines"),
         # plot.margin = unit(c(3, 1, 0.5, 0.5), "lines"),
-        legend.text = element_text(size = 8),
-        legend.title = element_text(size = 9))
+        legend.text = element_text(size = 7),
+        legend.title = element_text(size = 8))
 
 f.4a
 
@@ -620,8 +620,8 @@ f.4b <-
         legend.key.width=unit(1, "lines"), 
         legend.key.height=unit(1, "lines"),
         # plot.margin = unit(c(3, 1, 0.5, 0.5), "lines"),
-        legend.text = element_text(size = 8),
-        legend.title = element_text(size = 9))
+        legend.text = element_text(size = 7),
+        legend.title = element_text(size = 8))
 
 f.4b
 
