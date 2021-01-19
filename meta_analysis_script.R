@@ -374,7 +374,7 @@ f.3 <-
 # (1) portrait layout (maximum 6 inches (15.24 cm) wide x 8 inches (20.32 cm) high)
 # (2) landscape layout (maximum 8.75 inches (22.225 cm) wide x 5.25 inches (13.335 cm) high)
 ggsave(filename = here("figures/fig_3.jpg"), 
-       plot = f.3, width = 14, height = 12, units = "cm")
+       plot = f.3, width = 14, height = 11, units = "cm")
 
 
 # is the trangressive overyielding result robust to outliers?
@@ -462,6 +462,7 @@ bef.est.exp %>%
   pull(term)
 
 lm.beta <- lm(l.rr.est ~ species.specialisation*overyielding.cv, data = est.cov)
+summary(lm.beta)
 
 # check model predictions
 plot(lm.beta)
