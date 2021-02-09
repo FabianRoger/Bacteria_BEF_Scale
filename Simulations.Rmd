@@ -24,7 +24,7 @@ This script exports:
 
 See script `Multipanel_Fig_2.Rmd` for the assemblage and export of figure 2. 
 
-To generate the subplots for Figure S3, the `Scenario` Variable (line 135) has to be set to `1` and `2` respectively, and the code from line 135 to line 420 has to be run with these valules respectively. Figure S3 is then assembled and exported from the same script as Figure 2. 
+To generate the subplots for Figure S3, the `Scenario` Variable (line 135) has to be set to `1` and `2` respectively, and the code from line 135 to line 420 has to be run with these values respectively. Figure S3 is then assembled and exported from the same script as Figure 2. 
 
 make folder to export figures
 ```{r}
@@ -39,7 +39,7 @@ if(! dir.exists(here("figures"))){
 #set up simulations
 
 + We want to simulate 5 strains of Bacteria, growing in 5 different environments. 
-+ Each Strain differs in it's ability to grow on each antibiotic.
++ Each Strain differs in its ability to grow on each antibiotic.
 + We grow the bacteria in every possible combination (monocultures and all possible species mixtures)
 + We grow them on every possible combination of environments
 + We measure EF at different scales going from 1 to 5 environments  
@@ -54,7 +54,7 @@ envnum <- 5
 
 ## strains
 
-We create 5 species (for `specnum = 5`) named strain_1 to strain_5 and get every possible combination of the five species for all 1,2,3,4 and 5 species combination (corresponding richness levles 1:5 in a biodiversity experiment)
+We create 5 species (for `specnum = 5`) named strain_1 to strain_5 and get every possible combination of the five species for all 1,2,3,4 and 5 species combination (corresponding richness levels 1:5 in a biodiversity experiment)
 
 ```{r}
 spec <- paste("strain_", c(1:specnum), sep = "")
@@ -83,7 +83,7 @@ tibble(spec_combs =
 
 ## fitness values
 
-We assign each strain a fitness value for each environment. The values are drawn from a uniform distrubtion (0,1) for each strain and each environment. 
+We assign each strain a fitness value for each environment. The values are drawn from a uniform distribution (0,1) for each strain and each environment. 
 
 ```{r}
 
@@ -105,14 +105,14 @@ Traits
 
 ##plot values
 
-here we calculate the outcome (biomass / 'functioning') of every species combination in each environment. We calculate the mixture performance in three differen ways:
+here we calculate the outcome (biomass / 'functioning') of every species combination in each environment. We calculate the mixture performance in three different ways:
 
-1) **Dominance**: The mixture value equals the perfomance of the best performing species 
+1) **Dominance**: The mixture value equals the performance of the best performing species 
 2) **Mean**: The mixture value equals the mean of the performances of all species 
 
-3) **Weighted mean**: The mixture value equals the mean performance of all species, weighted by their relative performance in the environemnt
+3) **Weighted mean**: The mixture value equals the mean performance of all species, weighted by their relative performance in the environment
 
-**we present the wighted mean in the main article**
+**we present the weighted mean in the main article**
 
 *what the code does*
 
@@ -186,7 +186,7 @@ plot_values_df %>%
   group_by(environment) %>%
   nest() %>% 
   mutate(power_fit = map(data, ~lm(log(functioning) ~ log(richness), data = .))) %>% 
-  mutate(power_fit = map(power_fit, augment)) %>% 
+  mutate(power_fit = map(power_fit, augment, se_fit = TRUE)) %>% 
   unnest(cols = c(data, power_fit)) %>% 
   ggplot(aes(x = richness, y = functioning))+
   geom_point(position = position_jitter(width = 0.1, height = 0), 
@@ -201,7 +201,6 @@ plot_values_df %>%
   facet_wrap(~environment, scales = "free_y")+
   theme_bw()
 
-
 ```
 
 ##BEF metrics
@@ -211,7 +210,7 @@ We calculate the slope between richness and functioning for all combinations of 
 + for all scales (1:5 environments)
 + for all possible unique combinations of environments 
 
-We calculate the functioning of a given species mixture in that combination of environemnts at that scale as the average functioning of that species mixture in the single environments. 
+We calculate the functioning of a given species mixture in that combination of environments at that scale as the average functioning of that species mixture in the single environments. 
 
 For each scale and environment combination we then calculate the following metrics:
 
@@ -236,7 +235,8 @@ lapply(env_comb, function(x) { #for all scales (1:5)
        env_comb = paste0(y, collapse = " "),
        envnum = length(y),
        richness = plot_values_wide$richness,
-       functioning = rowMeans(plot_values_wide[,y])
+       functioning = rowMeans(plot_values_wide[,y]) #mean of functioning across environments
+       #functioning = rowSums(plot_values_wide[,y]) #sum of functioning across environments
                      )
   })
   })
@@ -250,8 +250,11 @@ env_metrics <-
   nest() %>% 
   mutate(linear_fit = map(data, ~lm(functioning ~ richness, data = .))) %>% 
   mutate(linear_fit = map_dbl(linear_fit, function(x) coef(x)[2])) %>%
-  #mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., start = list(a = 1, b = 1)))) %> 
-  #mutate(power_fit = map_dbl(power_fit, function(x) coef(x)[2])) %>% 
+  mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., start = list(a = 1, b = 1)))) %>%
+  mutate(power_fit = map_dbl(power_fit, function(x) coef(x)[2])) %>%
+  mutate(MichMent = map(data, ~nls(functioning ~ a*richness/(b+richness), 
+                                   data = ., start = list(a = 1, b = 1)))) %>%
+  mutate(MichMent = map_dbl(MichMent, function(x) coef(x)[2])) %>% 
   mutate(overyield = map_dbl(data, function(x) {
     x[x$richness == specnum,]$functioning / 
       mean(x[x$richness == 1,]$functioning)
@@ -259,7 +262,6 @@ env_metrics <-
   mutate(transgressive = map_dbl(data, function(x) {
     x[x$richness == specnum,]$functioning / 
       max(x[x$richness == 1,]$functioning)})) 
-
 ```
 
 ### Fig 2a - power-fits 
@@ -268,23 +270,32 @@ env_metrics <-
 if(Scenario %in% c(1,3)){
 Fig_2_a <- 
 env_values %>%
-  group_by(envnum) %>% 
+  group_by(env_comb, envnum) %>% 
   nest() %>% 
   mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., start = list(a = 1, b = 1)))) %>%
+  #mutate(power_fit = map(data, ~nls(functioning ~ a*richness/(b+richness), data = ., start = list(a = 1, b = 1)))) %>%
   mutate(power_fit = map(power_fit, augment)) %>% 
   unnest(cols = power_fit) %>% 
   ggplot(aes(x = richness, y = functioning, colour = as.factor(envnum)))+
-  geom_point( size = 1, alpha = 1, position = position_dodge(width = 0.7))+
-  geom_line(aes(y = .fitted, group = envnum), position = position_dodge(width = 0.7))+
+  geom_point(aes(group = env_comb), 
+             size = 1, alpha = 1, 
+              position = position_dodge(width = 0.7)
+              )+
+  geom_line(#aes(group = env_comb),
+            aes(y = .fitted, group = env_comb),
+            position = position_dodge(width = 0.7)
+            )+
+  facet_wrap(~envnum)+
   scale_color_manual(values = viridis(envnum+1)[1:envnum], name = "scale")+
   theme_classic()+
   labs(y = "production", x = "species richness")+
-  guides(colour = guide_legend(ncol = 3))+
-  theme(legend.position = c(0.85,0.15), 
-        legend.background = element_rect(fill = "transparent"),
-        axis.ticks.length=unit(-0.25, "cm"),
-        axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
-        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))
+  #guides(colour = guide_legend(ncol = 3))+
+  theme(legend.position = "none")
+  # theme(legend.position = c(0.85,0.15), 
+  #       legend.background = element_rect(fill = "transparent"),
+  #       axis.ticks.length=unit(-0.25, "cm"),
+  #       axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
+  #       axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))
 }
 
 if(Scenario == 2){
@@ -318,6 +329,7 @@ if(Scenario == 3) { #weighted mean
       Fig_S3_d <- Fig_2_a
     save("Fig_S3_d", file = here("figures", "Fig_S3_d.RData"))}
 
+Fig_2_a
 ```
 
 
@@ -338,6 +350,53 @@ env_values %>%
   ungroup() %>% 
   mutate_if(is.numeric, round, digits = 3)
 }
+
+```
+### Fig 2a - power-fits by scale
+
+```{r}
+
+Fig_2_a <- 
+env_metrics %>% 
+  select(-data) %>% 
+  gather(metric, value, -envnum, -env_comb) %>%
+  filter(metric == "power_fit") %>% 
+  #filter(metric == "MichMent") %>% 
+  ggplot(aes(x = envnum, y = value))+#, colour = as.factor(envnum)))+
+  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1), colour = viridis(6)[3])+
+  stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred", linetype = "dashed")+
+ # scale_color_manual(values = viridis(envnum+1)[1:envnum], name = "scale")+
+  theme_classic()+
+  labs(y = "beta_slopes", x = "scale")+
+  theme(legend.position = "none",
+        axis.ticks.length=unit(-0.25, "cm"),
+        axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
+        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )+
+  scale_y_continuous(limits = c(0,0.26))
+  NULL
+
+if(Scenario == 3) { #weighted mean
+  save("Fig_2_a", file = here("figures", "Fig_2_a.RData"))
+  } else if(Scenario == 2) { #mean
+    Fig_S3_a <- Fig_2_a
+  save("Fig_S3_a", file = here("figures", "Fig_S3_a.RData"))
+    } else if(Scenario == 1) { #dominance
+      Fig_S3_d <- Fig_2_a
+    save("Fig_S3_d", file = here("figures", "Fig_S3_d.RData"))}
+
+Fig_2_a
+```
+
+### beta statistics
+```{r}
+
+env_metrics %>% 
+  select(-data) %>% 
+  gather(metric, value, -envnum, -env_comb) %>%
+  filter(metric == "power_fit") %>% 
+  lm(value ~ envnum, data = .) %>% 
+  tidy %>% 
+  mutate_if(is.numeric, round, 3)
 
 ```
 
@@ -361,13 +420,13 @@ env_metrics %>%
   NULL
 
 if(Scenario == 3) { #weighted mean
-  save("Fig_2_b", file = here("figures", "Fig_2_b.RData"))
-  } else if(Scenario == 2) { #mean
-    Fig_S3_b <- Fig_2_b
-  save("Fig_S3_b", file = here("figures", "Fig_S3_b.RData"))
-    } else if(Scenario == 1) { #dominance
-      Fig_S3_e <- Fig_2_b
-    save("Fig_S3_e", file = here("figures", "Fig_S3_e.RData"))}
+  save("Fig_2_b", file = here("figures", "Fig_2_b.RData"))}
+  # } else if(Scenario == 2) { #mean
+  #   Fig_S3_b <- Fig_2_b
+  # save("Fig_S3_b", file = here("figures", "Fig_S3_b.RData"))
+  #   } else if(Scenario == 1) { #dominance
+  #     Fig_S3_e <- Fig_2_b
+  #   save("Fig_S3_e", file = here("figures", "Fig_S3_e.RData"))}
 
 
 Fig_2_b
@@ -394,16 +453,17 @@ env_metrics %>%
   select(-data) %>% 
   gather(metric, value, -envnum, -env_comb) %>% 
   filter(metric == "transgressive") %>% 
-  ggplot(aes(x = envnum, y = value, colour = as.factor(envnum)))+
-  geom_point( size = 4, alpha = 1, position = position_jitter(width = 0.1))+
+  ggplot(aes(x = envnum, y = value))+#, colour = as.factor(envnum)))+
+  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1), colour = viridis(6)[3])+
   stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
-  scale_color_manual(values = viridis(envnum+1)[1:envnum], name = "scale")+
+ # scale_color_manual(values = viridis(envnum+1)[1:envnum], name = "scale")+
   theme_classic()+
   labs(y = "transgressive overyielding", x = "scale")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
         axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )+
+  scale_y_continuous(limits = c(0, 1.1))+
   #coord_fixed(ratio = 2/0.2)+
   NULL
 
@@ -436,7 +496,7 @@ env_metrics %>%
 
 # multiple draws from uniform
 
-In the above example with took a single draw for the trait values from the uniform distribution. In the code below, we repeat this 500 times to get a distribution of BEF results from multiple draws
+In the above example with took a single draw for the trait values from the uniform distribution. In the code below, we repeat this 1000 times to get a distribution of BEF results from multiple draws
 
 ### fitness values
 ```{r}
@@ -550,14 +610,14 @@ env_metrics <-
       max(x[x$richness == 1,]$functioning)})) 
 
 
-overyield <- 
-env_metrics %>% 
-  select(-data) %>% 
-  gather(metric, value, -envnum, -env_comb) %>%
-  filter(metric == "overyield") %>% 
-  lm(value ~ envnum, data = .) %>% 
-  coef %>% 
-  `[`(2)
+# overyield <- 
+# env_metrics %>% 
+#   select(-data) %>% 
+#   gather(metric, value, -envnum, -env_comb) %>%
+#   filter(metric == "overyield") %>% 
+#   lm(value ~ envnum, data = .) %>% 
+#   coef %>% 
+#   `[`(2)
 
 
 transgressive <- 
@@ -565,25 +625,38 @@ env_metrics %>%
   select(-data) %>% 
   gather(metric, value, -envnum, -env_comb) %>%
   filter(metric == "transgressive") %>% 
-  lm(value ~ envnum, data = .) %>% 
-   coef %>% 
-  `[`(2)
+  lm(value ~ envnum, data = .)# %>% 
+  # coef %>% 
+ # `[`(2)
 
 beta_slopes <- 
 env_values %>% 
   group_by(envnum, env_comb) %>%
   nest() %>% 
-  mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., start = list(a = 1, b = 1)))) %>% 
-  mutate(beta = map_dbl(power_fit, function(x) coef(x)[2])) %>% 
-  lm(beta~envnum, data = .) %>% 
-  coef %>% 
-  `[`(2)
-  
+  mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., start = list(a = 1, b = 1)))) %>%
+  mutate(beta = map_dbl(power_fit, function(x) coef(x)[2])) %>%
+  lm(beta~envnum, data = .) #%>% 
+ # coef %>% 
+ # `[`(2)
+
+# MichMent <- 
+# env_values %>% 
+#   group_by(envnum, env_comb) %>%
+#   nest() %>% 
+#   mutate(MichMent = map(data, ~nls(functioning ~ a*richness/(b+richness),
+#                                    data = ., start = list(a = 1, b = 1)))) %>%
+#   mutate(MichMent = map_dbl(MichMent, function(x) coef(x)[2])) %>%
+#   lm(MichMent~envnum, data = .) %>% 
+#   coef %>% 
+#   `[`(2)
+#   
   
 
-return(tibble(overyield = overyield, 
-              transgressive = transgressive,
-              beta_slopes = beta_slopes))
+return(tibble(#overyield = overyield, 
+              transgressive = list(transgressive),
+              beta_slopes = list(beta_slopes)#,
+             # MichMent = MichMent
+              ))
     
     
   })
@@ -593,16 +666,17 @@ return(tibble(overyield = overyield,
 
 ```{r}
 Results <- 
-bind_rows(env_metrics_list)
+ bind_rows(env_metrics_list) %>% 
+  gather(metric, value) %>% 
+  mutate(slope = map_dbl(map(.$value, coef),"envnum"))
 ```
 
 ###Fig S2 - slope histograms
 ```{r}
 p <- 
 Results %>% 
-  gather(metric, value) %>% 
-  mutate(metric = factor(metric,  labels = c("beta slopes", "overyielding", "transgressive\noveryielding"))) %>% 
-  ggplot(aes(x = value, fill = metric))+
+  mutate(metric = factor(metric,  labels = c("beta slopes", "transgressive\noveryielding"))) %>% 
+  ggplot(aes(x = slope, fill = metric))+
   geom_histogram(binwidth = 0.005)+
   facet_wrap(~metric)+
   geom_vline(xintercept = 0, linetype = "dashed")+
@@ -619,10 +693,160 @@ if(Scenario == 3){
 
 p
 ```
+##Fig 2a(i)
+```{r}
+
+library(RColorBrewer)
+col_2ai <- brewer.pal(3, "Set1")[2]
+
+quantile_res <- 
+Results %>% 
+  filter(metric == "beta_slopes") %>% 
+  pull(slope) %>% 
+  quantile(probs = c(0.025, 0.5, 0.975))
+
+
+Fig_2_a_i <- 
+Results %>% 
+  filter(metric == "beta_slopes") %>% 
+  ggplot(aes(x = slope))+
+  geom_histogram(binwidth = 0.001, fill = col_2ai)+
+  geom_vline(xintercept = 0, linetype = "dashed")+
+  annotate(geom = "point", x = quantile_res[2], y = 10)+
+  annotate(geom = "errorbarh", xmax = quantile_res[1], 
+           xmin = quantile_res[3], y = 10)+
+  #geom_point(data = . %>% summarise(beta_slopes = median(beta_slopes)), aes(x = beta_slopes, y = 50))+
+  theme_bw()+
+  theme(legend.position = "none")+
+  labs(y = paste("n out of", N, "draws", sep = " "),
+       title = "change in production ~ richness relationship with scale",
+       x = "")
+  
+
+# if(Scenario == 3){
+#   save("Fig_2_a_i", file = here("figures", "Fig_2_a(i).RData"))
+#   #ggsave(plot = p, filename = here("figures", "Fig_2a(i).pdf"), width = 6, height = 3)
+# }
+
+
+Fig_2_a_i
+
+```
+
+```{r}
+newdata = tibble(envnum = seq(1,5,0.1))
+
+Res_slopes_trans <- 
+Results %>% 
+  filter(metric == "beta_slopes") %>% 
+  pull(value) %>% 
+  map(~predict.lm(., newdata = newdata)) %>% 
+  map_df(~tibble(value = .)) %>% 
+  mutate(envnum = rep(newdata$envnum, nrow(Results)/2)) %>% 
+  mutate(rep = rep(1:(nrow(Results)/2), each = nrow(newdata))) 
+
+med_slope <- 
+Results %>% 
+  select(-value) %>% 
+  filter(metric == "beta_slopes") %>% 
+  slice(1:999) %>% #has to be odd number to find exact median
+  mutate(rowid = 1:n()) %>% 
+  filter(abs(slope - median(slope)) < 10e-10) %>% 
+  pull(rowid)
+
+ggplot(Res_slopes_trans, aes(x = envnum, y = value, group = rep))+
+  geom_line(size = 0.5, alpha = 0.1)+
+  geom_line(data = . %>% filter(rep == med_slope), colour = "darkred", size = 1)+
+  theme_classic()+
+  labs(y = "beta slopes", x = "scale")+
+  theme(legend.position = "none",
+        axis.ticks.length=unit(-0.25, "cm"),
+        axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
+        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )
+  #scale_y_continuous(limits = c(0, 1.3))
+  
+```
+
+
+
+##Fig 2b(i)
+```{r}
+
+col_2bi <- brewer.pal(3, "Set1")[2]
+
+
+quantile_res <- 
+Results %>% 
+  filter(metric == "transgressive") %>% 
+  pull(slope) %>% 
+  quantile(probs = c(0.025, 0.5, 0.975))
+
+
+Fig_2_b_i <- 
+Results %>% 
+  filter(metric == "transgressive") %>% 
+  ggplot(aes(x = slope))+
+  geom_histogram(binwidth = 0.006, fill = col_2bi)+
+  geom_vline(xintercept = 0, linetype = "dashed")+
+  annotate(geom = "point", x = quantile_res[2], y = 6)+
+  annotate(geom = "errorbarh", 
+           xmax = quantile_res[1], 
+           xmin = quantile_res[3],
+           y = 6)+
+  theme_bw()+
+  theme(legend.position = "none")+
+  labs(y = paste("n out of", N, "draws", sep = " "),
+       title = "change in transgressive overyielding with scale",
+       x = "transgressive overyileding ~ scale")+
+  scale_x_continuous(limits = c(-0.07, 0.157))
+# 
+# if(Scenario == 3){
+#   save("Fig_2_b_i", file = here("figures", "Fig_2_b(i).RData"))
+#   ggsave(plot = p, filename = here("figures", "Fig_2b(i).pdf"), width = 6, height = 3)
+# }
+
+
+Fig_2_b_i
+
+```
+
+```{r}
+newdata = tibble(envnum = seq(1,5,0.1))
+
+Res_slopes_trans <- 
+Results %>% 
+  filter(metric == "transgressive") %>% 
+  pull(value) %>% 
+  map(~predict.lm(., newdata = newdata)) %>% 
+  map_df(~tibble(value = .)) %>% 
+  mutate(envnum = rep(newdata$envnum, nrow(Results)/2)) %>% 
+  mutate(rep = rep(1:(nrow(Results)/2), each = nrow(newdata))) 
+
+med_slope <- 
+Results %>% 
+  select(-value) %>% 
+  filter(metric == "transgressive") %>% 
+  slice(1:999) %>% #has to be odd number to find exact median
+  mutate(rowid = 1:n()) %>% 
+  filter(abs(slope - median(slope)) < 10e-10) %>% 
+  pull(rowid)
+
+ggplot(Res_slopes_trans, aes(x = envnum, y = value, group = rep))+
+  geom_line(size = 0.5, alpha = 0.1)+
+  geom_line(data = . %>% filter(rep == med_slope), colour = "darkred", size = 1)+
+  theme_classic()+
+  labs(y = "transgressive overyielding", x = "scale")+
+  theme(legend.position = "none",
+        axis.ticks.length=unit(-0.25, "cm"),
+        axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
+        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )
+  #scale_y_continuous(limits = c(0, 1.3))
+  
+```
 
 ##Fig S11 - species specialisation
 
-This code investigates the relationship between the species specialization index 
+This code investigates the relationship between transgressive overyielding and the species specialization index 
 ```{r}
 Species_specialisation <- 
   lapply(Trait_list, function(x) {
