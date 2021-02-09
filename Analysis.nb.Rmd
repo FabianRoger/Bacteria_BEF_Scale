@@ -48,9 +48,7 @@ The raw data are archived on [Figshare](https://doi.org/10.6084/m9.figshare.1227
 Loading the data will throw 10 parsing failures caused by unexpected values in varibales that we do not include in our analysis. These can be safely ignored. 
 
 ```{r}
-
 Data <- read_tsv(url("https://ndownloader.figshare.com/files/22626299"))
-
 ```
 
 
@@ -100,14 +98,14 @@ Data %>%
 ##sensitivity analysis 
 
 This part is a sensitivity analysis, producing Fig S7.
-It excludes strain "a" which has strong negtaive effects on the other strains in mixtures. 
-To run the code and prodcue Fig S7, set `Sens_analysis = TRUE`
+It excludes strain "a" which has strong negative effects on the other strains in mixtures. 
+To run the code and produce Fig S7, set `Sens_analysis = TRUE`
 
 Note that all the code will be executed when `Sens_analysis = TRUE` but the other figures will not be exported. 
 ```{r}
 
-#Sens_analysis = FALSE
-Sens_analysis = TRUE
+Sens_analysis = FALSE
+#Sens_analysis = TRUE
 
 if(Sens_analysis){
   
@@ -149,33 +147,63 @@ ssp <- length(unique(dom_strains)) / length(dom_strains)
 ### Fig. S5. 
 Production of each strain in each environment.
 
-In this graph we look at the measured prodcution of each strain in each antibiotic treatment. Strains have been selected to maximise the variance in growth performance such that different strains are expected to perform well under different antibiotic trematments and no strain is supposed to perform well in all conditions. 
+In this graph we look at the measured production of each strain in each antibiotic treatment. Strains have been selected to maximise the variance in growth performance such that different strains are expected to perform well under different antibiotic treatments and no strain is supposed to perform well in all conditions. 
 
 NOTE: for the figure we rename gene c-f to b-e to match the text in the manuscript. 
 
 ```{r}
-
+Fig_S5 <- 
 Data %>% 
   filter(Richness ==1) %>% 
   rowwise() %>% 
   mutate(gene = ifelse(gene == "a", "a", letters[which(letters == gene)-1])) %>% 
-  ggplot(aes(x = Antibiotic, y = GrowthYield, colour = gene))+
-  geom_point(position = position_jitterdodge(dodge.width = 0.5, jitter.width = 0.05), size = 0.6, alpha = 0.5)+
-  geom_hline(yintercept = mean(Data[Data$Antibiotic == "Con", ]$GrowthYield), 
-             linetype = "dashed", colour = "darkgrey")+
-  stat_summary(fun.data = "mean_cl_boot", geom = "pointrange", 
-               colour = "black", fill = "white", shape = 21, stroke = 0.4, size = 0.5, fatten = 2,
-               position = position_dodge(width = 0.5), 
-               aes(group = paste(gene, Antibiotic)))+
+  ggplot(aes(x = gene, 
+             y = GrowthYield/1e6, 
+             colour = Antibiotic))+
+  geom_point(position = position_jitterdodge(dodge.width = 0.5, jitter.width = 0.05),
+             size = 0.6, alpha = 0.5)+
+  geom_pointrange(data = . %>% 
+                   group_by(gene, Antibiotic) %>% 
+                   summarise(mean_cl_boot(GrowthYield)),
+                  aes(x = gene, y = y/1e6, ymin = ymin/1e6, ymax = ymax/1e6, group = Antibiotic),
+                  position = position_dodge(width = 0.5),
+                  colour = "black",
+               fill = "white", 
+               shape = 21, 
+               stroke = 0.4, 
+               size = 0.5, 
+               fatten = 2
+               )+
   scale_y_log10()+
   theme_bw()+
   guides(colour = guide_legend(override.aes = list(size = 4, alpha = 1)))+
   scale_color_manual(values = viridis(6)[1:5])+
-  labs(y = "production", x = "habitat", colour = "strain")
+  labs(y = "production (millions of cells)", x = "strain", colour = "Habitat")
 
 if(!Sens_analysis){
-ggsave(here("figures", "Fig_S5.pdf"), height = 4, width = 8)
+  ggsave(here("figures", "Fig_S5.pdf"), height = 4, width = 8)
+  save("Fig_S5", file = here("figures", "Fig_S5.RData"))
 }
+
+Fig_S5 
+```
+
++ Test if monoculture values vary significantly between species in each environment (such that transgressive overyielding doesn't just vary with noise)
+
+```{r}
+Data %>% 
+  filter(Richness ==1) %>% 
+  rowwise() %>% 
+  mutate(gene = ifelse(gene == "a", "a", letters[which(letters == gene)-1])) %>% 
+  group_by(Antibiotic) %>% 
+  nest() %>% 
+  mutate(linear_fit = map(data, ~lm(GrowthYield ~ gene, data = .))) %>% 
+  mutate(linear_fit = map(linear_fit, tidy)) %>% 
+  unnest(cols = linear_fit) %>% 
+  filter(term != "(Intercept)") %>% 
+  mutate(p.adj = p.adjust(p.value, method = "BH")) %>% 
+  filter(p.adj > 0.001)
+
 ```
 
 
@@ -187,29 +215,36 @@ In this graph we explore the biodiversity - ecosystem functioning (BEF) relation
 
 ```{r}
 
+Fig_S4 <- 
 Data %>% 
   na.omit() %>% 
   group_by(Antibiotic) %>%
   nest() %>% 
   mutate(power_fit = map(data, ~lm(log(GrowthYield) ~ log(Richness), data = .))) %>% 
-  mutate(power_fit = map(power_fit, augment)) %>% 
+  mutate(power_fit = map(power_fit, augment, se_fit = TRUE)) %>% 
   unnest(cols = c(data, power_fit)) %>% 
-  ggplot(aes(x = Richness, y = GrowthYield))+
-  geom_point(position = position_jitter(width = 0.1, height = 0), 
-             alpha = 0.2, size = 0.2, colour = "#377EB8")+
-  geom_line(aes(x = Richness, y = exp(.fitted)), 
-            colour = "black", size = 0.5)+
-  geom_ribbon(aes(x = Richness, 
-                  ymin = exp(.fitted - 2*.se.fit), 
-                  ymax = exp(.fitted + 2*.se.fit),
-                  group = Antibiotic), fill = "grey", alpha = 0.2)+
-  facet_wrap(~Antibiotic, scales = "free_y")+
+  ggplot(aes(x = Richness, y = GrowthYield/1e6, colour = Antibiotic))+
+  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0), 
+             alpha = 0.2, size = 0.2)+
+  # geom_line(aes(x = Richness, y = exp(.fitted)), 
+  #           colour = "black", size = 0.5)+
+  geom_line(aes(x = Richness, 
+                  y = exp(.fitted)/1e6, 
+                  #ymax = exp(.fitted + 2*.se.fit),
+                  group = Antibiotic), 
+            position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0))+
+  #facet_wrap(~Antibiotic)+
   theme_bw()+
-  labs(y = "production", x = "richness")
+  labs(y = "production", x = "richness")+
+  scale_y_log10()+
+  scale_color_manual(values = viridis(6)[1:5])
 
 if(!Sens_analysis){
-ggsave(here("figures", "Fig_S4.pdf"), height = 4, width = 8)
+  ggsave(here("figures", "Fig_S4.pdf"), height = 4, width = 8)
+  save("Fig_S4", file = here("figures", "Fig_S4.RData"))
 }
+
+Fig_S4
 
 ```
 ### power-fit statistics
@@ -418,17 +453,18 @@ ab_comb <- sapply(1:length(ab), function(x) combn(ab, x))
 # number of species
 specnum <- length(unique(Data_mono$gene))
 
-# calculate the average performance or each strain combination in each environemnt combination
+# calculate the average performance or each strain combination in each environment combination
 env_values <- 
 lapply(ab_comb, function(x) { #for all levels of environmental richness (scale: 1:5)
   apply(x, 2, function(y) { #for all combination of environments
    
      df <- data.frame(
-       env_comb = paste0(y, collapse = " "), # which combination of environemnts
+       env_comb = paste0(y, collapse = " "), # which combination of environments
        envnum = length(y), # what scale
        richness = Data_wide$Richness, 
        gene = Data_wide$gene,
-       functioning = rowMeans(Data_wide[,y]) #mean of functioning across environments
+       #functioning = rowMeans(Data_wide[,y]), #mean of functioning across environments
+       functioning = rowSums(Data_wide[,y]) #sum of functioning across environments
                      )
   })
   })
@@ -445,7 +481,7 @@ The relationship between average strain community production and richness for th
 
 Fig_2_d <- 
 env_values %>%
-  group_by(envnum) %>% 
+  group_by(env_comb, envnum) %>% 
   nest() %>% 
   mutate(log_fit = map(data, ~lm(log(functioning) ~ log(richness), data = .))) %>% 
   mutate(log_fit = map(log_fit, tidy)) %>% 
@@ -457,13 +493,14 @@ env_values %>%
   mutate(power_fit = map(power_fit, augment)) %>% 
   unnest(cols = power_fit) %>% 
   ggplot(aes(x = richness, y = functioning/1e8, colour = as.factor(envnum)))+
-  geom_point( size = 1, alpha = 1, position = position_dodge(width = 0.7))+
-  geom_line(aes(y = .fitted/1e8, group = envnum), position = position_dodge(width = 0.7))+
+  geom_point(aes(group = env_comb), size = 1, alpha = 1, position = position_dodge(width = 0.7))+
+  geom_line(aes(y = .fitted/1e8, group = env_comb), position = position_dodge(width = 0.7))+
   scale_color_manual(values = viridis(6)[1:5], name = "scale")+
   theme_classic()+
+  facet_wrap(~envnum)+
   labs(y = paste("production x", expression(1e8)), x = "species richness")+
   guides(colour = guide_legend(ncol = 3))+
-  theme(legend.position = c(0.85,0.85), 
+  theme(legend.position = c(0.85,0.25), 
         legend.background = element_rect(fill = "transparent"),
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
@@ -504,6 +541,8 @@ env_values %>%
 
 ```
 
+
+
 now we calculate the remaining BEF metrics (overyielding, transgressice overyielding and slopes)
 
 ```{r}
@@ -525,23 +564,24 @@ env_metrics <-
   mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., 
                                     start = list(a = exp(`(Intercept)`) , b = `log(richness)`)))) %>%  
   mutate(power_fit = map_dbl(power_fit, function(x) coef(x)[2])) %>% 
-  #overyielding (mean hightes mixture / mean monoculture)
+  #overyielding (mean highest mixture / mean monoculture)
    mutate(overyield = map_dbl(data, function(x) {
      mean(x[x$richness == specnum,]$functioning, na.rm = T) / 
        mean(x[x$richness == 1,]$functioning, na.rm = T)})) %>% 
-  #transgressive overyileding (mean highest mixture / max monoculture)
+  #transgressive overyielding (mean highest mixture / max monoculture)
   mutate(transgressive = map_dbl(data, function(x) {
     x %>% 
       group_by(gene) %>% 
       filter(richness %in% c(1, specnum)) %>% 
-      summarise(functioning = mean(functioning, na.rm = T), richness = unique(richness)) %>% 
+      summarise(functioning = mean(functioning, na.rm = T), richness = unique(richness), .groups = "drop") %>% 
       group_by(richness) %>% 
-      summarise(functioning = max(functioning, na.rm = T)) %>% 
+      summarise(functioning = max(functioning, na.rm = T), .groups = "drop") %>% 
       {.[.$richness == specnum,]$functioning /
           .[.$richness == 1,]$functioning}
     })) 
 
 ```
+
 
 + intermediate plot to visualize the results together
 ```{r}
@@ -561,6 +601,50 @@ env_metrics %>%
   theme_bw()+
   labs(x = "number of environments")
 ```
+### Fig 2d - power-fits by scale
+
+```{r}
+envnum <- max(env_metrics$envnum)
+
+Fig_2_d <- 
+env_metrics %>% 
+  select(-data) %>% 
+  gather(metric, value, -envnum, -env_comb) %>%
+  #filter(metric == "linear_fit") %>% 
+  filter(metric == "power_fit") %>% 
+  ggplot(aes(x = envnum, y = value))+ #colour = as.factor(envnum)))+
+  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1), colour = viridis(1))+
+  stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred", linetype = "dashed")+
+  #scale_color_manual(values = viridis[1:envnum], name = "scale")+
+  theme_classic()+
+  labs(y = "beta_slopes", x = "scale")+
+  theme(legend.position = "none",
+        axis.ticks.length=unit(-0.25, "cm"),
+        axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
+        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )
+  #scale_y_continuous(limits = c(0,0.045))
+  NULL
+
+
+save("Fig_2_d", file = here("figures", "Fig_2_d.RData"))
+ 
+Fig_2_d
+
+
+
+```
+
+### beta statistics
+```{r}
+env_metrics %>% 
+  select(-data) %>% 
+  gather(metric, value, -envnum, -env_comb) %>%
+  filter(metric == "power_fit") %>% 
+  lm(value ~ envnum, data = .) %>% 
+  tidy %>% 
+  mutate_if(is.numeric, round, 3)
+
+```
 
 ### Fig 2e - overyielding
 ```{r}
@@ -570,7 +654,7 @@ env_metrics %>%
   gather(metric, value, -envnum, -env_comb) %>%
   filter(metric == "overyield") %>% 
   ggplot(aes(x = envnum, y = value, colour = as.factor(envnum)))+
-  geom_point( size = 4, alpha = 1, position = position_jitter(width = 0.1))+
+  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1))+
   stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
   scale_color_manual(values = viridis(6)[1:5])+
   theme_classic()+
@@ -578,7 +662,7 @@ env_metrics %>%
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
-        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))+
+        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))
   #coord_fixed(ratio = 2)+
   NULL
 
@@ -608,16 +692,17 @@ env_metrics %>%
   select(-data, -`(Intercept)`, -`log(richness)`) %>% 
   gather(metric, value, -envnum, -env_comb) %>% 
   filter(metric == "transgressive") %>% 
-  ggplot(aes(x = envnum, y = value, colour = as.factor(envnum)))+
-  geom_point( size = 4, alpha = 1, position = position_jitter(width = 0.1))+
+  ggplot(aes(x = envnum, y = value)) +#, colour = as.factor(envnum)))+
+  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1), colour = viridis(1))+
   stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
-  scale_color_manual(values = viridis(6)[1:5])+
+  #scale_color_manual(values = viridis(6)[1:5])+
   theme_classic()+
   labs(y = "transgressive overyielding", x = "scale")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
         axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))+
+  scale_y_continuous(limits = c(0, 0.8))
   #scale_y_continuous(limits = c(0,NA))+
   #coord_fixed(ratio = 2/0.4)+
   NULL
@@ -644,4 +729,5 @@ env_metrics %>%
   mutate_if(is.numeric, round, 4)
 
 ```
+
 
