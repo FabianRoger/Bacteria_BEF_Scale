@@ -264,7 +264,7 @@ env_metrics <-
       max(x[x$richness == 1,]$functioning)})) 
 ```
 
-### Fig 2a - power-fits 
+### Fig - power-fits 
 
 ```{r}
 if(Scenario %in% c(1,3)){
@@ -320,16 +320,6 @@ env_values %>%
         axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))
 }
 
-if(Scenario == 3) { #weighted mean
-  save("Fig_2_a", file = here("figures", "Fig_2_a.RData"))
-  } else if(Scenario == 2) { #mean
-    Fig_S3_a <- Fig_2_a
-  save("Fig_S3_a", file = here("figures", "Fig_S3_a.RData"))
-    } else if(Scenario == 1) { #dominance
-      Fig_S3_d <- Fig_2_a
-    save("Fig_S3_d", file = here("figures", "Fig_S3_d.RData"))}
-
-Fig_2_a
 ```
 
 
@@ -352,7 +342,7 @@ env_values %>%
 }
 
 ```
-### Fig 2a - power-fits by scale
+### Fig - power-fits by scale
 
 ```{r}
 
@@ -375,16 +365,7 @@ env_metrics %>%
   scale_y_continuous(limits = c(0,0.26))
   NULL
 
-if(Scenario == 3) { #weighted mean
-  save("Fig_2_a", file = here("figures", "Fig_2_a.RData"))
-  } else if(Scenario == 2) { #mean
-    Fig_S3_a <- Fig_2_a
-  save("Fig_S3_a", file = here("figures", "Fig_S3_a.RData"))
-    } else if(Scenario == 1) { #dominance
-      Fig_S3_d <- Fig_2_a
-    save("Fig_S3_d", file = here("figures", "Fig_S3_d.RData"))}
 
-Fig_2_a
 ```
 
 ### beta statistics
@@ -400,7 +381,7 @@ env_metrics %>%
 
 ```
 
-### Fig 2b - overyielding
+### Fig - overyielding
 ```{r}
 Fig_2_b <- 
 env_metrics %>% 
@@ -419,17 +400,6 @@ env_metrics %>%
         axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )+
   NULL
 
-if(Scenario == 3) { #weighted mean
-  save("Fig_2_b", file = here("figures", "Fig_2_b.RData"))}
-  # } else if(Scenario == 2) { #mean
-  #   Fig_S3_b <- Fig_2_b
-  # save("Fig_S3_b", file = here("figures", "Fig_S3_b.RData"))
-  #   } else if(Scenario == 1) { #dominance
-  #     Fig_S3_e <- Fig_2_b
-  #   save("Fig_S3_e", file = here("figures", "Fig_S3_e.RData"))}
-
-
-Fig_2_b
 ```
 
 ### overyielding statistics
@@ -445,7 +415,7 @@ env_metrics %>%
 
 ```
 
-### Fig 2c - transgressive overyielding
+### Fig - transgressive overyielding
 ```{r}
 
 Fig_2_c <- 
@@ -480,18 +450,6 @@ if(Scenario == 3) { #weighted mean
 Fig_2_c
 ```
 
-
-### transgressive overyielding - statistics
-```{r}
-env_metrics %>% 
-  select(-data) %>% 
-  gather(metric, value, -envnum, -env_comb) %>%
-  filter(metric == "transgressive") %>% 
-  lm(value ~ envnum, data = .) %>% 
-  tidy %>% 
-  mutate_if(is.numeric, round, 3)
-
-```
 
 
 # multiple draws from uniform
@@ -668,36 +626,18 @@ return(tibble(#overyield = overyield,
 Results <- 
  bind_rows(env_metrics_list) %>% 
   gather(metric, value) %>% 
-  mutate(slope = map_dbl(map(.$value, coef),"envnum"))
+  mutate(slope = map_dbl(map(.$value, coef),"envnum")) %>% 
+  mutate(Intercept = map_dbl(map(.$value, coef),"(Intercept)")) %>% 
+  select(-value)
 ```
 
-###Fig S2 - slope histograms
-```{r}
-p <- 
-Results %>% 
-  mutate(metric = factor(metric,  labels = c("beta slopes", "transgressive\noveryielding"))) %>% 
-  ggplot(aes(x = slope, fill = metric))+
-  geom_histogram(binwidth = 0.005)+
-  facet_wrap(~metric)+
-  geom_vline(xintercept = 0, linetype = "dashed")+
-  theme_bw()+
-  scale_fill_brewer(palette = "Set1")+
-  theme(legend.position = "none")+
-  labs(y = paste("n out of", N, "draws", sep = " "),
-       title = "change in production ~ richness relationship with scale")
+##Fig 2 - slopes and histograms 
 
-if(Scenario == 3){
-  ggsave(plot = p, filename = here("figures", "Fig_S2.pdf"), width = 6, height = 3)
-}
-
-
-p
-```
-##Fig 2a(i)
+###Fig 2a - inset
 ```{r}
 
 library(RColorBrewer)
-col_2ai <- brewer.pal(3, "Set1")[2]
+col_2 <- viridis(6)[3]
 
 quantile_res <- 
 Results %>% 
@@ -710,7 +650,7 @@ Fig_2_a_i <-
 Results %>% 
   filter(metric == "beta_slopes") %>% 
   ggplot(aes(x = slope))+
-  geom_histogram(binwidth = 0.001, fill = col_2ai)+
+  geom_histogram(binwidth = 0.001, fill = col_2)+
   geom_vline(xintercept = 0, linetype = "dashed")+
   annotate(geom = "point", x = quantile_res[2], y = 10)+
   annotate(geom = "errorbarh", xmax = quantile_res[1], 
@@ -723,57 +663,70 @@ Results %>%
        x = "")
   
 
-# if(Scenario == 3){
-#   save("Fig_2_a_i", file = here("figures", "Fig_2_a(i).RData"))
-#   #ggsave(plot = p, filename = here("figures", "Fig_2a(i).pdf"), width = 6, height = 3)
-# }
+if(Scenario == 3){
+  save("Fig_2_a_i", file = here("figures", "Fig_2_a_i.RData"))
+  #ggsave(plot = p, filename = here("figures", "Fig_2a(i).pdf"), width = 6, height = 3)
+}
 
 
 Fig_2_a_i
 
 ```
 
+###Fig 2a
 ```{r}
-newdata = tibble(envnum = seq(1,5,0.1))
+env_pred = seq(1,5,0.1)
 
-Res_slopes_trans <- 
-Results %>% 
-  filter(metric == "beta_slopes") %>% 
-  pull(value) %>% 
-  map(~predict.lm(., newdata = newdata)) %>% 
-  map_df(~tibble(value = .)) %>% 
-  mutate(envnum = rep(newdata$envnum, nrow(Results)/2)) %>% 
-  mutate(rep = rep(1:(nrow(Results)/2), each = nrow(newdata))) 
+newdata = tibble(rep = rep(1:nrow(Results), each = length(env_pred)),
+                 env_pred = rep(env_pred, nrow(Results)))
 
+Results_pred <- 
+  Results %>% 
+  mutate(rep = 1:n()) %>% 
+  left_join(newdata) %>% 
+  mutate(predict = slope*env_pred+Intercept)
+ 
 med_slope <- 
 Results %>% 
-  select(-value) %>% 
+  mutate(rep = 1:n()) %>% 
   filter(metric == "beta_slopes") %>% 
-  slice(1:999) %>% #has to be odd number to find exact median
-  mutate(rowid = 1:n()) %>% 
-  filter(abs(slope - median(slope)) < 10e-10) %>% 
-  pull(rowid)
+  slice(1:999) %>% #has to be odd number to find exact media
+  mutate(slope_q = 
+  case_when(abs(slope - median(slope)) == min(abs(slope - median(slope))) ~ "median",
+            abs(slope - quantile(slope, 0.025)) == min( abs(slope - quantile(slope, 0.025))) ~ "low_q",
+            abs(slope - quantile(slope, 0.975)) == min( abs(slope - quantile(slope, 0.975))) ~ "high_q")) %>% 
+  filter(!is.na(slope_q))
 
-ggplot(Res_slopes_trans, aes(x = envnum, y = value, group = rep))+
-  geom_line(size = 0.5, alpha = 0.1)+
-  geom_line(data = . %>% filter(rep == med_slope), colour = "darkred", size = 1)+
+Results_beta <- 
+Results_pred %>% 
+  filter(metric == "beta_slopes")  
+
+Fig_2_a <- 
+  ggplot(Results_beta, aes(x = env_pred, y = predict, group = rep))+
+  geom_line(size = 0.5, alpha = 0.1, colour = col_2)+
+  geom_line(data = Results_beta %>% filter(rep == pull(filter(med_slope,
+                                                   slope_q == "median"), rep)), 
+            colour = "darkred", size = 1)+
   theme_classic()+
   labs(y = "beta slopes", x = "scale")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
-        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )
-  #scale_y_continuous(limits = c(0, 1.3))
+        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )+
+  scale_y_continuous(limits = c(-0.2, NA))
+
+
   
+save("Fig_2_a", file = here("figures", "Fig_2_a.RData"))
+
+Fig_2_a
+
 ```
 
 
 
-##Fig 2b(i)
+##Fig 2b inset
 ```{r}
-
-col_2bi <- brewer.pal(3, "Set1")[2]
-
 
 quantile_res <- 
 Results %>% 
@@ -781,12 +734,13 @@ Results %>%
   pull(slope) %>% 
   quantile(probs = c(0.025, 0.5, 0.975))
 
+Results_trans <- 
+  Results %>% 
+  filter(metric == "transgressive") 
 
 Fig_2_b_i <- 
-Results %>% 
-  filter(metric == "transgressive") %>% 
-  ggplot(aes(x = slope))+
-  geom_histogram(binwidth = 0.006, fill = col_2bi)+
+ggplot(Results_trans, aes(x = slope))+
+  geom_histogram(binwidth = 0.006, fill = col_2)+
   geom_vline(xintercept = 0, linetype = "dashed")+
   annotate(geom = "point", x = quantile_res[2], y = 6)+
   annotate(geom = "errorbarh", 
@@ -799,52 +753,55 @@ Results %>%
        title = "change in transgressive overyielding with scale",
        x = "transgressive overyileding ~ scale")+
   scale_x_continuous(limits = c(-0.07, 0.157))
-# 
-# if(Scenario == 3){
-#   save("Fig_2_b_i", file = here("figures", "Fig_2_b(i).RData"))
-#   ggsave(plot = p, filename = here("figures", "Fig_2b(i).pdf"), width = 6, height = 3)
-# }
+
+
+if(Scenario == 3){
+   save("Fig_2_b_i", file = here("figures", "Fig_2_b_i.RData"))
+ # ggsave(plot = p, filename = here("figures", "Fig_2b(i).pdf"), width = 6, height = 3)
+}
 
 
 Fig_2_b_i
-
 ```
 
+###Fig 2b
 ```{r}
-newdata = tibble(envnum = seq(1,5,0.1))
-
-Res_slopes_trans <- 
-Results %>% 
-  filter(metric == "transgressive") %>% 
-  pull(value) %>% 
-  map(~predict.lm(., newdata = newdata)) %>% 
-  map_df(~tibble(value = .)) %>% 
-  mutate(envnum = rep(newdata$envnum, nrow(Results)/2)) %>% 
-  mutate(rep = rep(1:(nrow(Results)/2), each = nrow(newdata))) 
-
 med_slope <- 
 Results %>% 
-  select(-value) %>% 
-  filter(metric == "transgressive") %>% 
-  slice(1:999) %>% #has to be odd number to find exact median
-  mutate(rowid = 1:n()) %>% 
-  filter(abs(slope - median(slope)) < 10e-10) %>% 
-  pull(rowid)
+  mutate(rep = 1:n()) %>% 
+  filter(metric == "transgressive")  %>% 
+  slice(1:999) %>% #has to be odd number to find exact media
+  mutate(slope_q = 
+  case_when(abs(slope - median(slope)) == min(abs(slope - median(slope))) ~ "median",
+            abs(slope - quantile(slope, 0.025)) == min( abs(slope - quantile(slope, 0.025))) ~ "low_q",
+            abs(slope - quantile(slope, 0.975)) == min( abs(slope - quantile(slope, 0.975))) ~ "high_q")) %>% 
+  filter(!is.na(slope_q))
 
-ggplot(Res_slopes_trans, aes(x = envnum, y = value, group = rep))+
-  geom_line(size = 0.5, alpha = 0.1)+
-  geom_line(data = . %>% filter(rep == med_slope), colour = "darkred", size = 1)+
+
+Results_trans <- 
+Results_pred %>% 
+  filter(metric == "transgressive")  
+
+Fig_2_b <- 
+ggplot(Results_trans, aes(x = env_pred, y = predict, group = rep))+
+  geom_line(size = 0.5, alpha = 0.1, colour = col_2ai)+
+  geom_line(data = Results_trans %>% filter(rep == pull(filter(med_slope, slope_q == "median"), rep)), colour = "darkred", size = 1)+
   theme_classic()+
-  labs(y = "transgressive overyielding", x = "scale")+
+  labs(y = "beta slopes", x = "scale")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
-        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )
-  #scale_y_continuous(limits = c(0, 1.3))
-  
+        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )+
+  scale_y_continuous(limits = c(-0.2, NA))
+
+
+save("Fig_2_b", file = here("figures", "Fig_2_b.RData"))
+
+
+Fig_2_b  
 ```
 
-##Fig S11 - species specialisation
+##Fig S8 - species specialisation
 
 This code investigates the relationship between transgressive overyielding and the species specialization index 
 ```{r}
@@ -861,7 +818,7 @@ Species_specialisation <-
 
 sppT <-   
 tibble(spec_spec = Species_specialisation, 
-       transgressive = Results$transgressive)
+       transgressive = filter(Results, metric == "transgressive")$slope)
 
 ggplot(sppT, aes(x = spec_spec, y = transgressive))+
   geom_beeswarm(shape = 21, fill = NA, colour = "#2ca25f")+
@@ -870,9 +827,8 @@ ggplot(sppT, aes(x = spec_spec, y = transgressive))+
   labs(x = "species specialisation index", y = expression(scale - OY[trans]-slope))
 
 if(Scenario == 3){
-ggsave(filename = here("figures", "Fig_S11.pdf"), width = 6, height = 4)
+ggsave(filename = here("figures", "Fig_S8.pdf"), width = 6, height = 4)
 }
-
 
 ```
 
