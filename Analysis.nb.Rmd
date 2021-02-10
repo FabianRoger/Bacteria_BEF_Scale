@@ -145,7 +145,7 @@ ssp <- length(unique(dom_strains)) / length(dom_strains)
 
 
 
-## Fig. 3A. 
+## Fig. 3A 
 Production of each strain in each environment.
 
 In this graph we look at the measured production of each strain in each antibiotic treatment. Strains have been selected to maximise the variance in growth performance such that different strains are expected to perform well under different antibiotic treatments and no strain is supposed to perform well in all conditions. 
@@ -543,7 +543,7 @@ env_metrics %>%
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
         axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))+
-  scale_y_continuous(limits = c(0, 0.8))+
+  #scale_y_continuous(limits = c(0, 0.8))+
   NULL
 
 if(!Sens_analysis){
