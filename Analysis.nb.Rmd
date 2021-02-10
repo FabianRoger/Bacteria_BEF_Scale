@@ -20,12 +20,13 @@ library(nlstools)
 
 This script exports: 
 
-+ the subplots for Figure 2
-+ Figure S4
-+ Figure S5
-+ Figure S6
++ the subplots for Figure 3 (a and b)
++ the subplots for Figure 2 (c and d)
++ Fig S3
++ Fig S4
++ the subplots for Figure S9
 
-See script `Multipanel_Fig_2.Rmd` for the assemblage and export of figure 2. 
+See script `Multipanel_Fig_2.Rmd` for the assemblage and export of figure 2, 3 and S9. 
 
 make folder to export figures
 ```{r}
@@ -45,7 +46,7 @@ The raw data are archived on [Figshare](https://doi.org/10.6084/m9.figshare.1227
 
 >Gamfeldt, Lars; Roger, Fabian; Palm, Martin; Hagan, James; Warringer, Jonas; Farewell, Anne (2020): Biodiversity and ecosystem functioning across gradients in spatial scale. figshare. Dataset. https://doi.org/10.6084/m9.figshare.12279884.v1
 
-Loading the data will throw 10 parsing failures caused by unexpected values in varibales that we do not include in our analysis. These can be safely ignored. 
+Loading the data will throw 10 parsing failures caused by unexpected values in variables that we do not include in our analysis. These can be safely ignored. 
 
 ```{r}
 Data <- read_tsv(url("https://ndownloader.figshare.com/files/22626299"))
@@ -53,7 +54,7 @@ Data <- read_tsv(url("https://ndownloader.figshare.com/files/22626299"))
 
 
 
-example of aggar plate with bacterial colonies - each dot represents a unique species combination
+example of agar plate with bacterial colonies - each dot represents a unique species combination
 
 ![example Plate](Plate_example.jpg)
 
@@ -68,10 +69,10 @@ We are interested in one response variables from the raw data:
 + growth yield 
 
 ## clean data
-+ exclude unecessary variables
++ exclude unnecessary variables
 + rename variables
 + change type to numeric
-+ filter spots with control strain ("ATCC") as data are allready normalized
++ filter spots with control strain ("ATCC") as data are already normalized
 + add column with richness of species combination
 
 ```{r}
@@ -97,9 +98,9 @@ Data %>%
 
 ##sensitivity analysis 
 
-This part is a sensitivity analysis, producing Fig S7.
+This part is a sensitivity analysis, producing Fig S4 and Fig S9.
 It excludes strain "a" which has strong negative effects on the other strains in mixtures. 
-To run the code and produce Fig S7, set `Sens_analysis = TRUE`
+To run the code and produce Fig S4 and S9, set `Sens_analysis = TRUE`
 
 Note that all the code will be executed when `Sens_analysis = TRUE` but the other figures will not be exported. 
 ```{r}
@@ -119,7 +120,7 @@ Data %>%
 
 ### species specialisation
 
-This calculates the species specialisation in our experiment, as defined in the main text. Note that it doesn't change with the exclusion of strain a, as this strain doesn't have the highest productivity any environment
+This calculates the species specialisation in our experiment, as defined in the main text. Note that it doesn't change with the exclusion of strain a, as this strain doesn't have the highest productivity in any environment
 
 ```{r}
 
@@ -142,9 +143,9 @@ ssp <- length(unique(dom_strains)) / length(dom_strains)
 ```
 
 
-## exploratory graphs
 
-### Fig. 3A. 
+
+## Fig. 3A. 
 Production of each strain in each environment.
 
 In this graph we look at the measured production of each strain in each antibiotic treatment. Strains have been selected to maximise the variance in growth performance such that different strains are expected to perform well under different antibiotic treatments and no strain is supposed to perform well in all conditions. 
@@ -181,7 +182,6 @@ Data %>%
   labs(y = "production (millions of cells)", x = "strain", colour = "Habitat")
 
 if(!Sens_analysis){
-  #ggsave(here("figures", "Fig_S5.pdf"), height = 4, width = 8)
   save("Fig_3A", file = here("figures", "Fig_3A.RData"))
 }
 
@@ -206,7 +206,7 @@ Data %>%
 ```
 
 
-### Fig. 3B
+## Fig. 3B
 
 Production-richness relationships.
 
@@ -225,21 +225,16 @@ Data %>%
   ggplot(aes(x = Richness, y = GrowthYield/1e6, colour = Antibiotic))+
   geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0), 
              alpha = 0.2, size = 0.2)+
-  # geom_line(aes(x = Richness, y = exp(.fitted)), 
-  #           colour = "black", size = 0.5)+
   geom_line(aes(x = Richness, 
                   y = exp(.fitted)/1e6, 
-                  #ymax = exp(.fitted + 2*.se.fit),
                   group = Antibiotic), 
             position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0))+
-  #facet_wrap(~Antibiotic)+
   theme_bw()+
   labs(y = "production", x = "richness")+
   scale_y_log10()+
   scale_color_manual(values = viridis(6)[1:5])
 
 if(!Sens_analysis){
-  #ggsave(here("figures", "Fig_S4.pdf"), height = 4, width = 8)
   save("Fig_3B", file = here("figures", "Fig_3B.RData"))
 }
 
@@ -321,97 +316,6 @@ ggsave(file = here("figures", "Fig_S4.pdf"),
 plots
 ```
 
-
-
-## observed vs expected mixture preformance
-
-here we calculate the expected mixture performance for each strain combination in each enviornment under three scenarios:
-
-1) Mixture performance is average of monoculture performances (subsitution design)
-2) Mixture performance is equal to highest monoculture performance (total dominance)
-3) Mixture performance is equal to weighted average of monoculture performance where the strains are weighted by their monocultre performance
-
-```{r}
-
-# extract Data for monocultures and take mean over all replicates within and across plates 
-
-Data_mono <- 
-  Data %>%
-  filter(Richness == 1) %>% 
-  group_by(Antibiotic, gene) %>%
-  summarize(mean_Yield = mean(GrowthYield, na.rm = T),
-            median_Yield = median(GrowthYield, na.rm = T))
-
-Data_poly <-
-  Data %>% 
-  filter(Richness > 1)
-
-spec_comb <- sapply(2:5, function(x) combn(letters[1:6][-2], x))
-env <- unique(as.character(Data$Antibiotic))
-
-res <- lapply(spec_comb, function(x){ # for each richness level
-  apply(x, 2, function(y){ # for each species combination
-    lapply(as.list(env), function(z){ # for each environment
-      
-      # performance of strains in species combination (y) in
-      # that environment (z) in monoculture
-      
-      expected <- Data_mono[Data_mono$Antibiotic == z & 
-                         Data_mono$gene %in% y,]$mean_Yield
-      
-      # calculate expected mixture performance based on 
-      # monoculture values and three different scenarios
-      # mean : average performance; max : better strains dominates
-      # wmean : weighted mean performance were the rel abundance of each strain
-      # is proportional to it's monoculture performance
-      
-      tibble(Antibiotic = z,
-             gene = paste0(y, collapse = ""),
-             expected_mean = mean(expected),
-             expected_max = max(expected),
-             expected_wmean = mean(sum(expected^2)/abs(sum(expected))))
-      
-    })
-  })
-})
-
-# unlist results to dataframe of expected values
-Expected <- 
-  unlist(res, recursive = F) %>%
-  unlist(recursive = F) %>%
-  bind_rows()
-
-# calculate difference of observed and expected 
-Data_poly <- 
-Data_poly %>% 
-  left_join(Expected) %>% 
-  mutate(Average =  GrowthYield - expected_mean,
-         Dominance = GrowthYield - expected_max,
-         Weighted = GrowthYield - expected_wmean) %>% 
-  mutate(Antibiotic = factor(Antibiotic)) %>% 
-  mutate(Antibiotic = fct_relevel(Antibiotic, "Con", after = Inf)) 
-```
-
-
-```{r}
-
-Data_poly %>% 
-  select(Antibiotic, Richness, Average, Dominance, Weighted) %>% 
-  gather(type, value, -Richness, -Antibiotic) %>%
-  mutate(type = fct_relevel(type, "weighted", after = 1)) %>% 
-  ggplot(aes(x = as.factor(Richness), y = value, colour = type))+
-  geom_point(position = position_jitterdodge(jitter.height = 0, jitter.width = 0.2),
-             size = 0.4, 
-             alpha = 0.1)+
-  geom_abline(slope = 0)+
-  facet_grid(type~Antibiotic)+
-  guides(colour = guide_legend(override.aes = list(size = 4, alpha = 1)))+
-  theme_bw()+
-  scale_color_brewer(palette = "Set1")+
-  labs(x = "richness", y = "performance relative to expected")
-  
-```
-
 ##BEF metrics
 
 We calculate the slope between richness and functioning for all combinations of environments. 
@@ -419,13 +323,11 @@ We calculate the slope between richness and functioning for all combinations of 
 + for all scales (1:5 environments)
 + for all possible unique combinations of environments 
 
-We calculate the functioning of a given species mixture in that combination of environemnts at that scale as the average functioning of that species mixture in the single environments. 
+We calculate the functioning of a given species mixture in that combination of environments at that scale as the average functioning of that species mixture in the single environments. 
 
 For each scale and environment combination we then calculate the following metrics:
 
-+ the **linear slope** of the richness ~ functioning relationship
 + the **slope of a power fit** to the richness ~ functioning relationship
-+ **overyielding**: highest mixture value / mean monoculture value
 + **transgressive overyielding**: highest mixture value / maximum monoculture value
 
 in a first step we calculate the mean functioning for each strain and strain combinations for all possible combinations of environments. 
@@ -434,7 +336,7 @@ As there is no sensible way how the replicated measurements should be matched ac
 
 ```{r, warning=FALSE}
 
-#calculate the average growth yield of each of teh 32 strain combinations in each environment and reshape the data to one combination per row and the 5 columns for the 5 environments. 
+#calculate the average growth yield of each of the 32 strain combinations in each environment and reshape the data to one combination per row and the 5 columns for the 5 environments. 
 
 Data_wide <- 
   Data %>% 
@@ -450,7 +352,7 @@ ab <- as.character(unique(Data$Antibiotic))
 ab_comb <- sapply(1:length(ab), function(x) combn(ab, x))
 
 # number of species
-specnum <- length(unique(Data_mono$gene))
+specnum <- Data %>% filter(Richness == 1) %>% pull(gene) %>% unique %>% length()
 
 # calculate the average performance or each strain combination in each environment combination
 env_values <- 
@@ -473,12 +375,11 @@ env_values <- bind_rows(unlist(env_values, recursive = FALSE))
 ```
 
 
-### Fig - power-fits 
+### plot power-fits 
 
 The relationship between average strain community production and richness for the 5 spatial scales. 
 ```{r}
 
-Fig_2_d <- 
 env_values %>%
   group_by(env_comb, envnum) %>% 
   nest() %>% 
@@ -504,14 +405,8 @@ env_values %>%
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
         axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))+
-  #coord_fixed(ratio = 1/2e8)+
   NULL
 
-if(!Sens_analysis){
-save("Fig_2_d", file = here("figures", "Fig_2_d.RData"))
-}
-
-Fig_2_d
 ```
 
 
@@ -540,9 +435,7 @@ env_values %>%
 
 ```
 
-
-
-now we calculate the remaining BEF metrics (overyielding, transgressice overyielding and slopes)
+now we calculate the remaining BEF metrics (transgressice overyielding and slopes)
 
 ```{r}
 
@@ -550,9 +443,6 @@ env_metrics <-
   env_values %>% 
   group_by(env_comb, envnum) %>%
   nest() %>% 
-  #linear production ~ richness slope
-  mutate(linear_fit = map(data, ~lm(functioning ~ richness, data = .))) %>%
-  mutate(linear_fit = map_dbl(linear_fit, function(x) coef(x)[2])) %>% 
   #loglinear fit to find start parameters for power fit
   mutate(log_fit = map(data, ~lm(log(functioning) ~ log(richness), data = .))) %>% 
   mutate(log_fit = map(log_fit, tidy)) %>% 
@@ -563,10 +453,6 @@ env_metrics <-
   mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., 
                                     start = list(a = exp(`(Intercept)`) , b = `log(richness)`)))) %>%  
   mutate(power_fit = map_dbl(power_fit, function(x) coef(x)[2])) %>% 
-  #overyielding (mean highest mixture / mean monoculture)
-   mutate(overyield = map_dbl(data, function(x) {
-     mean(x[x$richness == specnum,]$functioning, na.rm = T) / 
-       mean(x[x$richness == 1,]$functioning, na.rm = T)})) %>% 
   #transgressive overyielding (mean highest mixture / max monoculture)
   mutate(transgressive = map_dbl(data, function(x) {
     x %>% 
@@ -585,7 +471,6 @@ env_metrics <-
 + intermediate plot to visualize the results together
 ```{r}
 d <- tibble(linear_fit = c(-0.2,0.2),
-            overyield = c(-20, 20),
             power_fit = c(-0.2,0.2),
             transgressive = c(-50, 50)) %>% 
   gather(metric, value)
@@ -595,7 +480,7 @@ env_metrics %>%
   gather(metric, value, -envnum, -env_comb) %>% 
   ggplot(aes(x = envnum, y = value))+
   geom_point(position = position_jitter(width = 0.1), fill = "dodgerblue3", size = 2, shape = 21, alpha = 0.7)+
-  facet_wrap(~metric, scales = "free_y")+
+  facet_wrap(~metric, scales = "free_y", ncol = 2)+
   stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
   theme_bw()+
   labs(x = "number of environments")
@@ -609,19 +494,16 @@ Fig_2_c <-
 env_metrics %>% 
   select(-data) %>% 
   gather(metric, value, -envnum, -env_comb) %>%
-  #filter(metric == "linear_fit") %>% 
   filter(metric == "power_fit") %>% 
   ggplot(aes(x = envnum, y = value))+ #colour = as.factor(envnum)))+
   geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1), colour = viridis(1))+
   stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred", linetype = "dashed")+
-  #scale_color_manual(values = viridis[1:envnum], name = "scale")+
   theme_classic()+
   labs(y = "beta_slopes", x = "scale")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
-        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )
-  #scale_y_continuous(limits = c(0,0.045))
+        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))+
   NULL
 
 
@@ -645,65 +527,23 @@ env_metrics %>%
 
 ```
 
-### Fig - overyielding
-```{r}
-Fig_2_e <- 
-env_metrics %>% 
-  select(-data, -`(Intercept)`, -`log(richness)`) %>% 
-  gather(metric, value, -envnum, -env_comb) %>%
-  filter(metric == "overyield") %>% 
-  ggplot(aes(x = envnum, y = value, colour = as.factor(envnum)))+
-  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1))+
-  stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
-  scale_color_manual(values = viridis(6)[1:5])+
-  theme_classic()+
-  labs(y = "overyielding", x = "scale")+
-  theme(legend.position = "none",
-        axis.ticks.length=unit(-0.25, "cm"),
-        axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
-        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))
-  #coord_fixed(ratio = 2)+
-  NULL
-
-if(!Sens_analysis){
-save("Fig_2_e", file = here("figures", "Fig_2_e.RData"))
-}
-
-Fig_2_e
-```
-
-### overyielding statistics
-```{r}
-env_metrics %>% 
-  select(-data) %>% 
-  gather(metric, value, -envnum, -env_comb) %>%
-  filter(metric == "overyield") %>% 
-  lm(value ~ envnum, data = .) %>% 
-  tidy %>% 
-  mutate_if(is.numeric, round, 3)
-
-```
-
-### Fig 2d / S9- transgressive overyielding
+### Fig 2d / S9 - transgressive overyielding
 ```{r}
 Fig_2_d <- 
 env_metrics %>% 
   select(-data, -`(Intercept)`, -`log(richness)`) %>% 
   gather(metric, value, -envnum, -env_comb) %>% 
   filter(metric == "transgressive") %>% 
-  ggplot(aes(x = envnum, y = value)) +#, colour = as.factor(envnum)))+
+  ggplot(aes(x = envnum, y = value)) +
   geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1), colour = viridis(1))+
   stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
-  #scale_color_manual(values = viridis(6)[1:5])+
   theme_classic()+
   labs(y = "transgressive overyielding", x = "scale")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
         axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))+
-  scale_y_continuous(limits = c(0, 0.8))
-  #scale_y_continuous(limits = c(0,NA))+
-  #coord_fixed(ratio = 2/0.4)+
+  scale_y_continuous(limits = c(0, 0.8))+
   NULL
 
 if(!Sens_analysis){
