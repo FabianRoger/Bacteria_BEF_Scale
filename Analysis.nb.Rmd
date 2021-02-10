@@ -144,7 +144,7 @@ ssp <- length(unique(dom_strains)) / length(dom_strains)
 
 ## exploratory graphs
 
-### Fig. S5. 
+### Fig. 3A. 
 Production of each strain in each environment.
 
 In this graph we look at the measured production of each strain in each antibiotic treatment. Strains have been selected to maximise the variance in growth performance such that different strains are expected to perform well under different antibiotic treatments and no strain is supposed to perform well in all conditions. 
@@ -152,7 +152,7 @@ In this graph we look at the measured production of each strain in each antibiot
 NOTE: for the figure we rename gene c-f to b-e to match the text in the manuscript. 
 
 ```{r}
-Fig_S5 <- 
+Fig_3A <- 
 Data %>% 
   filter(Richness ==1) %>% 
   rowwise() %>% 
@@ -181,16 +181,17 @@ Data %>%
   labs(y = "production (millions of cells)", x = "strain", colour = "Habitat")
 
 if(!Sens_analysis){
-  ggsave(here("figures", "Fig_S5.pdf"), height = 4, width = 8)
-  save("Fig_S5", file = here("figures", "Fig_S5.RData"))
+  #ggsave(here("figures", "Fig_S5.pdf"), height = 4, width = 8)
+  save("Fig_3A", file = here("figures", "Fig_3A.RData"))
 }
 
-Fig_S5 
+Fig_3A 
 ```
 
 + Test if monoculture values vary significantly between species in each environment (such that transgressive overyielding doesn't just vary with noise)
 
 ```{r}
+
 Data %>% 
   filter(Richness ==1) %>% 
   rowwise() %>% 
@@ -198,24 +199,22 @@ Data %>%
   group_by(Antibiotic) %>% 
   nest() %>% 
   mutate(linear_fit = map(data, ~lm(GrowthYield ~ gene, data = .))) %>% 
-  mutate(linear_fit = map(linear_fit, tidy)) %>% 
+  mutate(linear_fit = map(linear_fit, glance)) %>% 
   unnest(cols = linear_fit) %>% 
-  filter(term != "(Intercept)") %>% 
-  mutate(p.adj = p.adjust(p.value, method = "BH")) %>% 
-  filter(p.adj > 0.001)
+  select(Antibiotic, r.squared, p.value, df)
 
 ```
 
 
-### Fig. S4
+### Fig. 3B
 
 Production-richness relationships.
 
-In this graph we explore the biodiversity - ecosystem functioning (BEF) relationship in each environment. Community prodcution is the metric of functioning and initial strain richness is the measure of biodiversity. 
+In this graph we explore the biodiversity - ecosystem functioning (BEF) relationship in each environment. Community production is the metric of functioning and initial strain richness is the measure of biodiversity. 
 
 ```{r}
 
-Fig_S4 <- 
+Fig_3B <- 
 Data %>% 
   na.omit() %>% 
   group_by(Antibiotic) %>%
@@ -240,11 +239,11 @@ Data %>%
   scale_color_manual(values = viridis(6)[1:5])
 
 if(!Sens_analysis){
-  ggsave(here("figures", "Fig_S4.pdf"), height = 4, width = 8)
-  save("Fig_S4", file = here("figures", "Fig_S4.RData"))
+  #ggsave(here("figures", "Fig_S4.pdf"), height = 4, width = 8)
+  save("Fig_3B", file = here("figures", "Fig_3B.RData"))
 }
 
-Fig_S4
+Fig_3B
 
 ```
 ### power-fit statistics
@@ -264,13 +263,13 @@ Data %>%
 
 ```
 
-### Fig. S6/S7. 
+### Fig. S3/S4. 
 
 Highlighting (in green) which strain is included in which combination in each environment.
 
-In Figure S4, we sho the BEF realtionship in each environment. Each point in that figure represents a replicate of either a single strain (Richness = 1) or a combination of strains (Richness 2 -5). All possible species combinations are present. 
+In Figure 3B, we show the BEF relationship in each environment. Each point in that figure represents a replicate of either a single strain (Richness = 1) or a combination of strains (Richness 2-5). All possible species combinations are present. 
 
-In this figure we highlight for each strain what species combination it is part of. This highlights some obvious patterns of positive and negative slelection effects were the mixture performance depends strongly on the presence or absence of a particular strain in a particular environemnt. 
+In this figure we highlight for each strain what species combination it is part of. This highlights some obvious patterns of positive and negative selection effects were the mixture performance depends strongly on the presence or absence of a particular strain in a particular environment. 
 
 NOTE: for the figure we rename gene c-f to b-e to match the text in the manuscript. 
 ```{r, warning=FALSE}
@@ -305,16 +304,16 @@ plots[[i]] <-
   
 }
 
-#Fig S6 (with all strains)
+#Fig S3 (with all strains)
 if(!Sens_analysis){
-ggsave(file = here("figures", "Fig_S6.pdf"), 
+ggsave(file = here("figures", "Fig_S3.pdf"), 
        arrangeGrob(grobs = plots, ncol = 2), 
        width = 16, height = 12 )
 }
 
-#Fig S7 (without strain a)
+#Fig S4 (without strain a)
 if(Sens_analysis){
-ggsave(file = here("figures", "Fig_S7.pdf"), 
+ggsave(file = here("figures", "Fig_S4.pdf"), 
        arrangeGrob(grobs = plots, ncol = 2), 
        width = 16, height = 12 )
 }
@@ -474,7 +473,7 @@ env_values <- bind_rows(unlist(env_values, recursive = FALSE))
 ```
 
 
-### Fig 2d - power-fits 
+### Fig - power-fits 
 
 The relationship between average strain community production and richness for the 5 spatial scales. 
 ```{r}
@@ -601,12 +600,12 @@ env_metrics %>%
   theme_bw()+
   labs(x = "number of environments")
 ```
-### Fig 2d - power-fits by scale
+### Fig 2c - power-fits by scale
 
 ```{r}
 envnum <- max(env_metrics$envnum)
 
-Fig_2_d <- 
+Fig_2_c <- 
 env_metrics %>% 
   select(-data) %>% 
   gather(metric, value, -envnum, -env_comb) %>%
@@ -626,9 +625,9 @@ env_metrics %>%
   NULL
 
 
-save("Fig_2_d", file = here("figures", "Fig_2_d.RData"))
+save("Fig_2_c", file = here("figures", "Fig_2_c.RData"))
  
-Fig_2_d
+Fig_2_c
 
 
 
@@ -646,7 +645,7 @@ env_metrics %>%
 
 ```
 
-### Fig 2e - overyielding
+### Fig - overyielding
 ```{r}
 Fig_2_e <- 
 env_metrics %>% 
@@ -685,9 +684,9 @@ env_metrics %>%
 
 ```
 
-### Fig 2f - transgressive overyielding
+### Fig 2d / S9- transgressive overyielding
 ```{r}
-Fig_2_f <- 
+Fig_2_d <- 
 env_metrics %>% 
   select(-data, -`(Intercept)`, -`log(richness)`) %>% 
   gather(metric, value, -envnum, -env_comb) %>% 
@@ -708,14 +707,14 @@ env_metrics %>%
   NULL
 
 if(!Sens_analysis){
-save("Fig_2_f", file = here("figures", "Fig_2_f.RData"))
+save("Fig_2_d", file = here("figures", "Fig_2_d.RData"))
 }
 
 if(Sens_analysis){
-save("Fig_2_f", file = here("figures", "Fig_S_12.RData"))
+save("Fig_2_d", file = here("figures", "Fig_S_9.RData"))
 }
   
-Fig_2_f
+Fig_2_d
 ```
 
 ### transgressive overyielding - statistics
