@@ -246,7 +246,7 @@ est.cov <-
   full_join(cov.df, l.est, by = "Experiment_ID")
 
 
-### plots and statistics for the manuscript
+### plots and statistics for manuscript
 
 # perform wilcoxon tests on scale-slopes
 
@@ -279,8 +279,7 @@ library(ggpubr)
 library(viridis)
 
 
-
-### fig. 3
+### fig. 4
 
 # choose example Experiment_ID
 e.g.s <- "Blake_and_Duffy_2010_one"
@@ -290,7 +289,7 @@ e.g.s.l <- "Blake and Duffy 2010"
 v.c <- viridis(n = 1, alpha = 1, begin = 0.5, end = 0.5, option = "C")
 v.c.1 <- viridis(n = 1, alpha = 1, begin = 0.7, end = 0.7, option = "C")
 
-f.3a.dat <- 
+f.4a.dat <- 
   est.cov %>%
   rename(`ln(mix/mono) ~ scale` = l.rr.est,
          `trans. OY ~ scale` = t.oy.est) %>%
@@ -298,21 +297,21 @@ f.3a.dat <-
                names_to = "slope",
                values_to = "est")
 
-f.3a.m <- 
-  f.3a.dat %>%
+f.4a.m <- 
+  f.4a.dat %>%
   group_by(slope) %>%
   summarise(est = median(est), .groups = "drop")
 
-# fig. 3a
-f.3a <- 
-  ggplot(data = filter(f.3a.dat, Experiment_ID != e.g.s),
+# fig. 4a
+f.4a <- 
+  ggplot(data = filter(f.4a.dat, Experiment_ID != e.g.s),
        mapping = aes(x = slope, y = (log(1+est)) )) +
   geom_hline(yintercept = 0, linetype = "dashed", size = 0.25) +
   geom_point(size = 2, position = position_jitter(w = 0.04, h = 0), 
              shape = 16, alpha = 0.5) +
-  geom_point(data = f.3a.m,
+  geom_point(data = f.4a.m,
              colour = "black", fill = "white", size = 2.5, shape = 23) +
-  geom_point(data = filter(f.3a.dat, Experiment_ID == e.g.s), 
+  geom_point(data = filter(f.4a.dat, Experiment_ID == e.g.s), 
              position = position_nudge(x = 0.075),
              colour = v.c, size = 2, shape = 16) +
   # annotate(geom = "text", x = 1.025, y = 0.25, 
@@ -327,10 +326,10 @@ f.3a <-
   theme_meta() # +
   # theme(axis.text.x = element_text(angle = 45, vjust = 0.8))
 
-f.3a
+f.4a
 
-# fig. 3b
-f.3b <- 
+# fig. 4b
+f.4b <- 
   l.df %>%
   filter(Experiment_ID == e.g.s ) %>%
   ggplot(data = .,
@@ -344,8 +343,8 @@ f.3b <-
   theme_meta()
 
 
-# fig. 3c
-f.3c <- 
+# fig. 4c
+f.4c <- 
   l.df %>%
   filter(Experiment_ID == e.g.s) %>%
   ggplot(data = .,
@@ -358,23 +357,23 @@ f.3c <-
   ggtitle(label = e.g.s.l) +
   theme_meta()
 
-f.3bc <- 
-  ggarrange(f.3b, f.3c, ncol = 1, nrow = 2,
-            labels = c("b", "c"),
+f.4bc <- 
+  ggarrange(f.4b, f.4c, ncol = 1, nrow = 2,
+            labels = c("B", "C"),
             font.label = list(size = 10, color = "black", face = "bold", family = NULL))
 
 
-f.3 <- 
-  ggarrange(f.3a, f.3bc, ncol = 2, nrow = 1,
+f.4 <- 
+  ggarrange(f.4a, f.4bc, ncol = 2, nrow = 1,
             widths = c(1.4, 1),
-            labels = c("a", "", ""),
+            labels = c("A", "", ""),
             font.label = list(size = 10, color = "black", face = "bold", family = NULL))
 
 # Ecology (journal) figure guidelines:
 # (1) portrait layout (maximum 6 inches (15.24 cm) wide x 8 inches (20.32 cm) high)
 # (2) landscape layout (maximum 8.75 inches (22.225 cm) wide x 5.25 inches (13.335 cm) high)
-ggsave(filename = here("figures/fig_3.jpg"), 
-       plot = f.3, width = 14, height = 11, units = "cm")
+ggsave(filename = here("figures/fig_4.pdf"), 
+       plot = f.4, width = 14, height = 11, units = "cm", dpi = 450)
 
 
 # is the trangressive overyielding result robust to outliers?
@@ -454,7 +453,7 @@ bef.est.exp  %>%
 # write_csv(table.s3, here("figures/Table_S3.csv") )
 
 
-### plot fig.4a
+### plot fig.5a
 
 # fit the linear model with the lowest AIC (highest AIC weight)
 bef.est.exp %>%
@@ -486,8 +485,8 @@ g.pred <- expand.grid(overyielding.cv = oy.m.g, species.specialisation = ssi.g)
 # get the predicted values
 g.pred$l.rr.est <- predict(object = lm.beta, newdata = g.pred)
 
-# plot fig. 4
-f.4a <- 
+# plot fig. 5
+f.5a <- 
   est.cov %>%
   rename(`species specialisation` = species.specialisation) %>%
   ggplot(data = .,
@@ -518,7 +517,7 @@ f.4a <-
         legend.text = element_text(size = 7),
         legend.title = element_text(size = 8))
 
-f.4a
+f.5a
 
 
 
@@ -561,7 +560,7 @@ table.s4 <-
 # write_csv(table.s4, here("figures/Table_S4.csv") )
 
 
-### plot fig.4b
+### plot fig.5b
 
 # fit the linear model with the lowest AIC (highest AIC weight)
 t.oy.exp %>%
@@ -593,8 +592,8 @@ g.pred <- expand.grid(species.specialisation = ssi.g, overyielding.m = oy.m.g)
 g.pred$t.oy.est <- predict(object = lm.b, newdata = g.pred)
 
 
-# plot fig. 4
-f.4b <- 
+# plot fig. 5
+f.5b <- 
   est.cov %>%
   rename("average overyielding" = overyielding.m) %>%
   ggplot(data = .,
@@ -624,25 +623,100 @@ f.4b <-
         legend.text = element_text(size = 7),
         legend.title = element_text(size = 8))
 
-f.4b
+f.5b
 
-# 
-f.4 <- 
-  ggarrange(f.4a, f.4b, ncol = 2, nrow = 1,
+# combine  
+f.5 <- 
+  ggarrange(f.5a, f.5b, ncol = 2, nrow = 1,
             widths = c(1, 1),
-            labels = c("a", "b"),
+            labels = c("A", "B"),
             font.label = list(size = 10, color = "black", face = "bold", family = NULL))
-f.4
+f.5
 
 # Ecology (journal) figure guidelines:
 # (1) portrait layout (maximum 6 inches (15.24 cm) wide x 8 inches (20.32 cm) high)
 # (2) landscape layout (maximum 8.75 inches (22.225 cm) wide x 5.25 inches (13.335 cm) high)
 
 # save the output
-ggsave(filename = here("figures/fig_4.jpg"), 
-       plot = f.4, width = 15.24, height = 10, units = "cm")
+ggsave(filename = here("figures/fig_5.pdf"), 
+       plot = f.5, width = 15.24, height = 10, units = "cm", dpi = 450)
 
 
 
+### plot fig. S5 and S6
+
+# add information on realm and function-type
+si.dat <- 
+  full_join(l.df,
+            meta_an %>%
+              select(Experiment_ID, Realm, `Ecosystem function` = Ecosystem_function_type) %>%
+              distinct(),
+            by = "Experiment_ID")
+
+# rename the experiment_ID column entries
+si.dat$Experiment_ID <- factor(si.dat$Experiment_ID)
+levels(si.dat$Experiment_ID) <- LETTERS[1:length(si.dat$Experiment_ID)]
+
+f.S5 <- 
+  ggplot(data = si.dat, 
+         mapping = aes(x = environments, y = l.rr,
+                       colour = Realm, shape = `Ecosystem function`,
+                       group = NULL)) +
+  geom_jitter(width = 0.01, size = 1.2, alpha = 0.7) +
+  ylab("ln(mixture/monoculture)") +
+  xlab("scale") +
+  scale_colour_viridis_d(option = "C", end = 0.9) +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~Experiment_ID, scales = "free", ncol = 5) +
+  labs(shape = "Ecosystem function", colour = "Realm") +
+  scale_x_continuous(breaks = c(1:8)) +
+  theme_meta() +
+  theme(axis.text = element_text(size = 6),
+        legend.position = c(0.8, 0.045),
+        legend.box = "horizontal",
+        legend.key = element_rect(fill = "white"),
+        legend.text = element_text(size = 7),
+        legend.title = element_text(size = 8))
+
+f.S5
+
+# Ecology (journal) figure guidelines:
+# (1) portrait layout (maximum 6 inches (15.24 cm) wide x 8 inches (20.32 cm) high)
+# (2) landscape layout (maximum 8.75 inches (22.225 cm) wide x 5.25 inches (13.335 cm) high)
+
+# save the output
+ggsave(filename = here("figures/fig_S5.pdf"), 
+       plot = f.S5, width = 15.24, height = 20.32, units = "cm", dpi = 450)
 
 
+f.S6 <- 
+  ggplot(data = si.dat, 
+         mapping = aes(x = environments, y = t.oy,
+                       colour = Realm, shape = `Ecosystem function`,
+                       group = NULL)) +
+  geom_jitter(width = 0.01, size = 1.2, alpha = 0.7) +
+  ylab("transgressive overyielding") +
+  xlab("scale") +
+  scale_colour_viridis_d(option = "C", end = 0.9) +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~Experiment_ID, scales = "free", ncol = 5) +
+  labs(shape = "Ecosystem function", colour = "Realm") +
+  scale_x_continuous(breaks = c(1:8)) +
+  theme_meta() +
+  theme(axis.text = element_text(size = 6),
+        legend.position = c(0.8, 0.045),
+        legend.box = "horizontal",
+        legend.key = element_rect(fill = "white"),
+        legend.text = element_text(size = 7),
+        legend.title = element_text(size = 8))
+f.S6
+
+# Ecology (journal) figure guidelines:
+# (1) portrait layout (maximum 6 inches (15.24 cm) wide x 8 inches (20.32 cm) high)
+# (2) landscape layout (maximum 8.75 inches (22.225 cm) wide x 5.25 inches (13.335 cm) high)
+
+# save the output
+ggsave(filename = here("figures/fig_S6.pdf"), 
+       plot = f.S6, width = 15.24, height = 20.32, units = "cm", dpi = 450)
+
+### end
