@@ -16,6 +16,11 @@ library(viridis)
 library(purrr)
 library(gridExtra)
 library(nlstools)
+
+# check that the Hmisc package is installed
+if(! "Hmisc" %in% installed.packages()[,1]) stop(
+    "this script requires the 'Hmisc' to be installed"
+  )
 ```
 
 This script exports: 
@@ -162,7 +167,7 @@ Data %>%
              y = GrowthYield/1e6, 
              colour = Antibiotic))+
   geom_point(position = position_jitterdodge(dodge.width = 0.5, jitter.width = 0.05),
-             size = 0.6, alpha = 0.5)+
+             size = 0.75, alpha = 0.5, shape = 19)+
   geom_pointrange(data = . %>% 
                    group_by(gene, Antibiotic) %>% 
                    summarise(mean_cl_boot(GrowthYield)),
@@ -172,13 +177,13 @@ Data %>%
                fill = "white", 
                shape = 21, 
                stroke = 0.4, 
-               size = 0.5, 
+               size = 1, 
                fatten = 2
                )+
   scale_y_log10()+
   theme_bw()+
   guides(colour = guide_legend(override.aes = list(size = 4, alpha = 1)))+
-  scale_color_manual(values = viridis(6)[1:5])+
+  scale_color_manual(values = viridis(6, option = "C")[1:5])+
   labs(y = "production (millions of cells)", x = "strain", colour = "Habitat")
 
 if(!Sens_analysis){
@@ -230,9 +235,9 @@ Data %>%
                   group = Antibiotic), 
             position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0))+
   theme_bw()+
-  labs(y = "production", x = "richness")+
+  labs(y = "production", x = "strain richness")+
   scale_y_log10()+
-  scale_color_manual(values = viridis(6)[1:5])
+  scale_color_manual(values = viridis(6, option = "C")[1:5])
 
 if(!Sens_analysis){
   save("Fig_3B", file = here("figures", "Fig_3B.RData"))
@@ -496,10 +501,11 @@ env_metrics %>%
   gather(metric, value, -envnum, -env_comb) %>%
   filter(metric == "power_fit") %>% 
   ggplot(aes(x = envnum, y = value))+ #colour = as.factor(envnum)))+
-  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1), colour = viridis(1))+
-  stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred", linetype = "dashed")+
+  geom_point(size = 2, alpha = 1, position = position_jitter(width = 0.01), 
+             colour = viridis(n = 1, alpha = 1, begin = 0.5, end = 0.5, option = "C"))+
+  stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
   theme_classic()+
-  labs(y = "beta_slopes", x = "scale")+
+  labs(y = "beta slope", x = "scale")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
@@ -535,7 +541,7 @@ env_metrics %>%
   gather(metric, value, -envnum, -env_comb) %>% 
   filter(metric == "transgressive") %>% 
   ggplot(aes(x = envnum, y = value)) +
-  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1), colour = viridis(1))+
+  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1), colour = viridis(n = 1, alpha = 1, begin = 0.5, end = 0.5, option = "C"))+
   stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
   theme_classic()+
   labs(y = "transgressive overyielding", x = "scale")+

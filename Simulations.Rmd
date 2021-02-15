@@ -479,7 +479,7 @@ Fig_2_a <-
                                                    slope_q == "median"), rep)), 
             colour = "darkred", size = 1)+
   theme_classic()+
-  labs(y = "beta slopes", x = "scale")+
+  labs(y = "beta slope", x = "scale")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
@@ -550,7 +550,7 @@ ggplot(Results_trans, aes(x = env_pred, y = predict, group = rep))+
   geom_line(size = 0.5, alpha = 0.1, colour = col_2)+
   geom_line(data = Results_trans %>% filter(rep == pull(filter(med_slope, slope_q == "median"), rep)), colour = "darkred", size = 1)+
   theme_classic()+
-  labs(y = "beta slopes", x = "scale")+
+  labs(y = "transgressive overyielding", x = "scale")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
