@@ -556,7 +556,7 @@ t.s4 <-
   mutate(AIC_wt = AIC_wt_start/sum(AIC_wt_start)) %>%
   select(-AIC_wt_start)
 
-write_csv(t.s4, here("figures/table_S4.csv") )
+View(t.s4)
 
 
 ### plot fig.5b
