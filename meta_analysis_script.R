@@ -272,6 +272,13 @@ wc.test <- do.call(rbind, wc.test)
 # correct the p.values for multiple testing using bonferroni
 wc.test$p.value.bf <- p.adjust(wc.test$p.value, method = "bonferroni")
 
+# is the BEF slope result robust to outliers?
+est.cov %>%
+  filter(l.rr.est != max(l.rr.est)) %>%
+  pull(l.rr.est) %>%
+  wilcox.test(., alternative = "two.sided", 
+              mu = 0, paired = FALSE, exact = FALSE, conf.int = FALSE)
+
 # is the trangressive overyielding result robust to outliers?
 est.cov %>%
   filter(t.oy.est != max(t.oy.est)) %>%
@@ -556,7 +563,7 @@ t.s4 <-
   mutate(AIC_wt = AIC_wt_start/sum(AIC_wt_start)) %>%
   select(-AIC_wt_start)
 
-View(t.s4)
+write_csv(t.s4, here("figures/table_S4.csv") )
 
 
 ### plot fig.5b
@@ -570,6 +577,14 @@ lm.b <- lm(t.oy.est ~ species.specialisation*overyielding.m, data = est.cov)
 
 # check model predictions
 plot(lm.b)
+
+# check model without the outliers
+lm.1 <- 
+  lm(t.oy.est ~ species.specialisation*overyielding.m, 
+   data = est.cov %>% filter(Experiment_ID != "Dzialowski_Smith_2008_one"))
+
+# check the assumptions
+plot(lm.1)
 
 # get predicted values from this model
 
