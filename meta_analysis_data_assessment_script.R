@@ -1,7 +1,7 @@
 
 # Title: Gamfeldt et al. Biodiversity and ecosystem functioning across gradients in spatial scale
 
-# Project: Literature synthesis (meta-analysis) data assessment
+# Project: Meta-analysis data assessment
 
 # load relevant libraries
 library(dplyr)

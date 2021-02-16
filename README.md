@@ -5,8 +5,8 @@ This repository contains the code for the simulations and analysis for the artic
 
 preliminary citation: 
 
-> Biodiversity and ecosystem functioning across gradients in spatial scale
-Lars Gamfeldt, Fabian Roger, Martin Palm, James Hagan, Jonas Warringer, Anne Farewell
+> The effects of biodiversity loss on transgressive overyielding and the slope of the biodiversity-function relationship across spatial scales
+Lars Gamfeldt, Fabian Roger, James Hagan, Martin Palm, Jonas Warringer, Anne Farewell
 
 
 To reproduce the analysis for the simulations and the bacteria microcosm experiment, download the repository and execute the scripts:
@@ -28,25 +28,25 @@ The second script documents how the strains have been selected to maximize varia
 
 To reproduce the analysis for the meta-analysis, download the repository and execute the script:
 
-+ Bef_scale_synthesis_script.R
++ meta_analysis_script.R
 
 This script reproduces all figures and tables associated with the meta-analysis from the raw data files, namely:
 
-+ Fig. 3Ai - iii
-+ Fig. 3B
-+ Fig. S8
-+ Fig. S9
-+ Fig. S10
-+ Table S1
++ Fig. 4
++ Fig. 5
++ Fig. S5
++ Fig. S6
 + Table S2
 + Table S3
 + Table S4
 
-The script also reproduces additional statistics and values reported only in text
+The script also reproduces additional statistics and values reported only in text.
 
-In addition, the script examines the data assessment file which was used to select papers for the meta-analysis via various inclusion/exclusion criteria.
+In addition, to reproduce the statistics regarding how many publications were searched, included etc. that are reported in the text, download and execture the following script:
 
-All data are downloaded directly within the script from figshare.com. The meta-data for the two datasets used can be found at: https://ndownloader.figshare.com/files/22918043
++ meta_analysis_data_assessment_script.R
+
+All data are downloaded directly within the scripts from figshare.com. The two datasets and their associated meta-data can be found at: https://ndownloader.figshare.com/files/22918043
 
 
 

@@ -1,7 +1,7 @@
 
 # Title: Gamfeldt et al. Biodiversity and ecosystem functioning across gradients in spatial scale
 
-# Project: Literature synthesis (meta-analysis)
+# Project: Meta-analysis
 
 # load relevant libraries
 library(dplyr)
@@ -272,6 +272,13 @@ wc.test <- do.call(rbind, wc.test)
 # correct the p.values for multiple testing using bonferroni
 wc.test$p.value.bf <- p.adjust(wc.test$p.value, method = "bonferroni")
 
+# is the trangressive overyielding result robust to outliers?
+est.cov %>%
+  filter(t.oy.est != max(t.oy.est)) %>%
+  pull(t.oy.est) %>%
+  wilcox.test(., alternative = "two.sided", 
+              mu = 0, paired = FALSE, exact = FALSE, conf.int = FALSE)
+
 
 # load the ggplot and ggpubr libraries for plotting
 library(ggplot2)
@@ -376,14 +383,6 @@ ggsave(filename = here("figures/fig_4.pdf"),
        plot = f.4, width = 14, height = 11, units = "cm", dpi = 450)
 
 
-# is the trangressive overyielding result robust to outliers?
-est.cov %>%
-  filter(t.oy.est != max(t.oy.est)) %>%
-  pull(t.oy.est) %>%
-  wilcox.test(., alternative = "two.sided", 
-              mu = 0, paired = FALSE, exact = FALSE, conf.int = FALSE)
-
-
 
 ### how is lrr.est and t.oy.est related to covariates?
 
@@ -437,7 +436,8 @@ exp.vars <- list(c("species.specialisation", "overyielding.m", "function.cv", "o
 bef.est.exp <- lm.scale(data = est.cov, slope = "l.rr.est", e.vars = exp.vars, outliers = NA)
 
 # clean this output
-bef.est.exp  %>% 
+t.s2 <- 
+  bef.est.exp  %>% 
   select(model, term, r.squared, AIC) %>%
   group_by(model, r.squared, AIC) %>%
   summarise(terms = paste(term, collapse = "+")) %>% 
@@ -447,10 +447,9 @@ bef.est.exp  %>%
   mutate(delta_AIC =  AIC - (min(AIC))) %>%
   mutate(AIC_wt_start = exp(1)^(-0.5*delta_AIC)) %>%
   mutate(AIC_wt = AIC_wt_start/sum(AIC_wt_start)) %>%
-  select(-AIC_wt_start) %>%
-  View()
+  select(-AIC_wt_start)
 
-# write_csv(table.s3, here("figures/Table_S3.csv") )
+write_csv(t.s2, here("figures/table_S2.csv") )
 
 
 ### plot fig.5a
@@ -525,7 +524,7 @@ f.5a
 t.oy.exp <- lm.scale(data = est.cov, slope = "t.oy.est", e.vars = exp.vars, outliers = NA)
 
 # clean this output
-table.s3 <- 
+t.s3 <- 
   t.oy.exp %>% 
   select(model, term, r.squared, AIC) %>%
   group_by(model, r.squared, AIC) %>%
@@ -538,13 +537,13 @@ table.s3 <-
   mutate(AIC_wt = AIC_wt_start/sum(AIC_wt_start)) %>%
   select(-AIC_wt_start)
 
-# write_csv(table.s3, here("figures/Table_S3.csv") )
+write_csv(t.s3, here("figures/table_S3.csv") )
 
 # re-run this analysis without the large outlier
 t.oy.exp.outlier <- lm.scale(data = est.cov, slope = "t.oy.est", e.vars = exp.vars, outliers = c("Dzialowski_Smith_2008_one"))
 
 # clean this output
-table.s4 <- 
+t.s4 <- 
   t.oy.exp.outlier %>% 
   select(model, term, r.squared, AIC) %>%
   group_by(model, r.squared, AIC) %>%
@@ -557,7 +556,7 @@ table.s4 <-
   mutate(AIC_wt = AIC_wt_start/sum(AIC_wt_start)) %>%
   select(-AIC_wt_start)
 
-# write_csv(table.s4, here("figures/Table_S4.csv") )
+write_csv(t.s4, here("figures/table_S4.csv") )
 
 
 ### plot fig.5b
