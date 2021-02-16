@@ -158,7 +158,7 @@ l.out <-
     # add a column for the number of environments
     d.f.o <- 
       d.f.o %>%
-      mutate(environments = nchar(environment.id))
+      mutate(environments = nchar( as.character(environment.id) ))
     
     # reorder the columns
     d.f.o <- 
