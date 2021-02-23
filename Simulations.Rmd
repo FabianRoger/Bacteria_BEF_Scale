@@ -600,7 +600,7 @@ Fig_2_b_i
 ```
 
 
-##Fig S8 - species specialisation
+##Fig S7 - species specialisation
 
 This code investigates the relationship between transgressive overyielding and the species specialization index.
 
@@ -631,7 +631,7 @@ ggplot(sppT, aes(x = spec_spec, y = transgressive))+
   theme_bw()+
   labs(x = "species specialisation index", y = expression(scale - OY[trans]-slope))
 
-ggsave(filename = here("figures", "Fig_S8.pdf"), width = 6, height = 4)
+ggsave(filename = here("figures", "Fig_S7.pdf"), width = 6, height = 4)
 
 
 ```
