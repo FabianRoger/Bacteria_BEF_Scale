@@ -33,19 +33,19 @@ arrange figures
 ```{r}
 Fig_2_a <- 
 Fig_2_a +
-  theme(axis.title.y = element_text(vjust = -4) )+
   scale_y_continuous(limits = c(-0.15, NA))+
-  theme_meta()
+  theme_meta()+
+  labs(y = "BEF slope")
 
 
-Fig_2_b <- Fig_2_b+
+Fig_2_b <- Fig_2_b +
   labs(x = "")+
-  theme(axis.title.y = element_text(vjust = -4) )+
   theme_meta()+
   scale_y_continuous(limits = c(-0.15, NA))
 
-Fig_2_c <- Fig_2_c+
-   theme_meta()
+Fig_2_c <- Fig_2_c +
+  theme_meta()+
+  labs(y = "BEF slope")
 
 
 Fig_2_d <- Fig_2_d+
@@ -149,7 +149,7 @@ ggsave(plot = Fig3, filename = here("figures", "Fig_3.pdf"),
 ```
 
 
-#Figure S9
+#Figure S8
 
 note that to produce this figure wou must run the code in Analysis.nb.Rmd both with and without the sensitivity analysis
 
@@ -187,7 +187,7 @@ p1 <- plot_grid(Fig_2_d_with_a, Fig_2_d,
 
 p1
 
-ggsave(plot = p1, filename = here("figures", "Fig_S9.pdf"), width = 8, height = 4)
+ggsave(plot = p1, filename = here("figures", "Fig_S8.pdf"), width = 8, height = 4)
 
 
 ```
