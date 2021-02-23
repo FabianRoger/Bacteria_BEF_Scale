@@ -35,7 +35,7 @@ Fig_2_a <-
 Fig_2_a +
   scale_y_continuous(limits = c(-0.15, NA))+
   theme_meta()+
-  labs(y = "BEF slope")
+  labs(y = "BEF slope", x = "")
 
 
 Fig_2_b <- Fig_2_b +
