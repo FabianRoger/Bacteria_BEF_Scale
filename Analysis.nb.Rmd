@@ -503,7 +503,7 @@ env_metrics %>%
   ggplot(aes(x = envnum, y = value))+ #colour = as.factor(envnum)))+
   geom_point(size = 2, alpha = 1, position = position_jitter(width = 0.01), 
              colour = viridis(n = 1, alpha = 1, begin = 0.5, end = 0.5, option = "C"))+
-  stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
+  stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred", linetype = "dashed")+
   theme_classic()+
   labs(y = "beta slope", x = "scale")+
   theme(legend.position = "none",
