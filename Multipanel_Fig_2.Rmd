@@ -151,7 +151,7 @@ ggsave(plot = Fig3, filename = here("figures", "Fig_3.pdf"),
 
 #Figure S8
 
-note that to produce this figure wou must run the code in Analysis.nb.Rmd both with and without the sensitivity analysis
+note that to produce this figure you must run the code in Analysis.nb.Rmd both with and without the sensitivity analysis
 
 load figures
 ```{r}
@@ -172,15 +172,6 @@ Fig_2_d <- Fig_2_d+
 
 arrange figures
 ```{r}
-
-legend <- get_legend(
-  # create some space to the left of the legend
-  Fig_2_a + 
-    guides(color = guide_legend(nrow = 1))+
-    theme(legend.position = "bottom")+
-    theme(legend.box.margin = margin(0, 0, 0, 0))
-)
-
 p1 <- plot_grid(Fig_2_d_with_a, Fig_2_d, 
                 align = "v", labels="AUTO",
                 label_x = 0)
