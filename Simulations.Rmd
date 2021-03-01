@@ -650,7 +650,7 @@ lapply(env_metrics_transgressive, function(df) {
   
   df %>% 
     group_by(envnum) %>% 
-    summarise(transgressive = mean(transgressive))
+    summarise(transgressive = mean(transgressive), .groups = "drop")
 }) %>% 
   bind_rows(.id = "run") 
 
