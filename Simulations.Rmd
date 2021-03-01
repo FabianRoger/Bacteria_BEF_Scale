@@ -14,6 +14,8 @@ library(viridis)
 library(here)
 library(pbapply)
 library(nlstools)
+library(ggridges)
+source(here("function_plotting_theme.R"))
 ```
 
 This script exports: 
@@ -599,6 +601,86 @@ ggplot(Results_trans, aes(x = slope))+
 Fig_2_b_i
 ```
 
+##Fig S2 
+
+In what percentage of cases does the performance of the mixture exceed the performance of the highest monoculture at the largest scale?
+
+```{r}
+
+env_metrics_transgressive <- 
+  pblapply(plot_values_df_list, function(PV) {
+    
+    plot_values_wide <-
+      PV %>% 
+      spread(environment, functioning)
+
+#calculate average functioning for each env combination at each scale and store results in dataframe
+env_values <- 
+lapply(env_comb, function(x) { #for all scales (1:5)
+  apply(x, 2, function(y) { #for all environmental combinations
+   
+     df <- data.frame( #average functioning for this environment combination
+       env_comb = paste0(y, collapse = " "),
+       envnum = length(y),
+       richness = plot_values_wide$richness,
+       functioning = rowMeans(plot_values_wide[,y]),
+       stringsAsFactors = FALSE
+                     )
+  })
+  })
+
+env_values <- bind_rows(unlist(env_values, recursive = FALSE))
+
+# calculate BEF metrics for each environment combination
+env_metrics <- 
+  env_values %>% 
+  group_by(env_comb, envnum) %>%
+  nest() %>% 
+  mutate(transgressive = map_dbl(data, function(x) {
+    x[x$richness == specnum,]$functioning / 
+      max(x[x$richness == 1,]$functioning)})) 
+
+return(env_metrics)
+})
+
+
+
+mean_transgressive <- 
+lapply(env_metrics_transgressive, function(df) {
+  
+  df %>% 
+    group_by(envnum) %>% 
+    summarise(transgressive = mean(transgressive))
+}) %>% 
+  bind_rows(.id = "run") 
+
+FigS2 <- 
+mean_transgressive %>% 
+  mutate(over_one = transgressive > 1) %>% 
+  mutate(envnum = factor(envnum, levels = as.character(5:1))) %>% 
+ggplot(data = ., aes(x = transgressive, y = envnum,
+                     fill = ..x..> 1))+
+  geom_density_ridges_gradient()+
+  geom_vline(xintercept = 1, linetype = "dashed")+
+  theme_minimal()+
+  scale_fill_manual(values = c("grey", "darkred"))+
+  theme(legend.position = "none")+
+  labs(x = "Transgressive overyielding", y = "scale")+
+  theme_meta()
+
+ggsave(filename = here("figures", "Fig_S2.pdf"), width = 6, height = 4)
+
+FigS2
+```
+
+## summary statistic
+
+```{r}
+mean_transgressive %>% 
+  mutate(transgressive = transgressive > 1) %>% 
+  group_by(envnum) %>% 
+  summarise(`trans. OY > 1 (%)`=sum(transgressive) / n())
+```
 
 ##Fig S7 - species specialisation
 
@@ -629,7 +711,8 @@ ggplot(sppT, aes(x = spec_spec, y = transgressive))+
   geom_beeswarm(shape = 21, fill = NA, colour = "#2ca25f")+
   geom_smooth(se = FALSE, method = "lm", colour = "black", size = 0.5)+
   theme_bw()+
-  labs(x = "species specialisation index", y = expression(scale - OY[trans]-slope))
+  labs(x = "species specialisation index", y = expression(scale - OY[trans]-slope))+
+  theme_meta()
 
 ggsave(filename = here("figures", "Fig_S7.pdf"), width = 6, height = 4)
 
