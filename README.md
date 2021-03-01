@@ -5,7 +5,7 @@ This repository contains the code for the simulations and analysis for the artic
 
 preliminary citation: 
 
-> The effects of biodiversity loss on transgressive overyielding and the slope of the biodiversity-function relationship across spatial scales
+> The biodiversity-function relationship is invariant to changes in spatial scale but transgressive overyielding is not
 Lars Gamfeldt, Fabian Roger, James Hagan, Martin Palm, Jonas Warringer, Anne Farewell
 
 
@@ -15,7 +15,9 @@ To reproduce the analysis for the simulations and the bacteria microcosm experim
 + Analysis.Rmd
 + Multipanel_Fig_2.Rmd
 
-Th repository contains two further scripts: 
+You must run the script `Analysis.Rmd` twice, once with `Sens_analysis = FALSE` and once with `Sens_analysis = TRUE` (Line 104), to produce the figures in the main text and the supplementary figures. 
+
+The repository contains two further scripts: 
 
 + Join_and_export_raw_data.Rmd
 + exploring data BSL2_6_7_ATCC_ABs_absolute.R
@@ -24,7 +26,6 @@ Th repository contains two further scripts:
 These scripts cannot be run as the necessary data are not provided. The first script documents how the raw data files from the OD reader in the experiment have been joined. The joined data are uploaded to figshare and downloaded in the Analysis.Rmd script. 
 
 The second script documents how the strains have been selected to maximize variance in growth performance across environments. The script is for internal documentation. These data are not public. 
-
 
 To reproduce the analysis for the meta-analysis, download the repository and execute the script:
 
@@ -42,7 +43,7 @@ This script reproduces all figures and tables associated with the meta-analysis 
 
 The script also reproduces additional statistics and values reported only in text.
 
-In addition, to reproduce the statistics regarding how many publications were searched, included etc. that are reported in the text, download and execture the following script:
+In addition, to reproduce the statistics regarding how many publications were searched, included etc. that are reported in the text, download and execute the following script:
 
 + meta_analysis_data_assessment_script.R
 
