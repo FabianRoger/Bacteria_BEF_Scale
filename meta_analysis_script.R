@@ -1,7 +1,7 @@
 
 # Title: Gamfeldt et al. Biodiversity and ecosystem functioning across gradients in spatial scale
 
-# Project: Meta-analysis
+# Project: Literature synthesis
 
 # load relevant libraries
 library(dplyr)
@@ -305,9 +305,9 @@ v.c.1 <- viridis(n = 1, alpha = 1, begin = 0.7, end = 0.7, option = "C")
 
 f.4a.dat <- 
   est.cov %>%
-  rename(`ln(mix/mono) ~ scale` = l.rr.est,
+  rename(`BEF slope ~ scale` = l.rr.est,
          `trans. OY ~ scale` = t.oy.est) %>%
-  pivot_longer(cols = c('ln(mix/mono) ~ scale', 'trans. OY ~ scale'),
+  pivot_longer(cols = c('BEF slope ~ scale', 'trans. OY ~ scale'),
                names_to = "slope",
                values_to = "est")
 
@@ -319,7 +319,7 @@ f.4a.m <-
 # fig. 4a
 f.4a <- 
   ggplot(data = filter(f.4a.dat, Experiment_ID != e.g.s),
-       mapping = aes(x = slope, y = (log(1+est)) )) +
+       mapping = aes(x = slope, y = (est) )) +
   geom_hline(yintercept = 0, linetype = "dashed", size = 0.25) +
   geom_point(size = 2, position = position_jitter(w = 0.04, h = 0), 
              shape = 16, alpha = 0.5) +
@@ -328,19 +328,10 @@ f.4a <-
   geom_point(data = filter(f.4a.dat, Experiment_ID == e.g.s), 
              position = position_nudge(x = 0.075),
              colour = v.c, size = 2, shape = 16) +
-  # annotate(geom = "text", x = 1.025, y = 0.25, 
-           # label = paste("W", wc.test[wc.test$response == "l.rr.est", ]$w.stat, sep = " = "),
-           # size = 2.5) +
-  # annotate(geom = "text", x = 1.025, y = 0.2, 
-           # label = paste("P", round(wc.test[wc.test$response == "l.rr.est", ]$p.value.bf, 3), sep = " = "),
-           # size = 2.5) +
-  ylab("slope est.") +
+  ylab("slope estimate") +
   xlab("") +
   ggtitle(label = "") +
-  theme_meta() # +
-  # theme(axis.text.x = element_text(angle = 45, vjust = 0.8))
-
-f.4a
+  theme_meta()
 
 # fig. 4b
 f.4b <- 
@@ -352,7 +343,7 @@ f.4b <-
   geom_jitter(width = 0.01, size = 2, 
               colour = v.c, shape = 16) +
   xlab("") +
-  ylab("ln(mix/mono)") +
+  ylab("BEF slope") +
   ggtitle(label = e.g.s.l) +
   theme_meta()
 
@@ -502,11 +493,9 @@ f.5a <-
             aes(group = (`species specialisation`)),
             size = 0.75) +
   geom_jitter(width = 0.01, size = 2) +
-  ylab("ln(mix/mono) ~ scale (est.)") +
+  ylab("BEF slope ~ scale estimate") +
   xlab("CV overyielding") +
-  viridis::scale_colour_viridis(option = "C") +
-  # annotate(geom = "text", x = 0.1, y = 0.3, size = 3.5,
-           # label = paste("r^2 == ", round(summary(lm.beta)$r.squared, 2)), parse = TRUE) +
+  viridis::scale_colour_viridis(option = "C", end = 0.9) +
   guides(color = guide_colourbar(title.position = "top", 
                                  title.vjust = 1,
                                  frame.colour = "black", 
@@ -616,11 +605,9 @@ f.5b <-
             aes(group = (`average overyielding`)),
             size = 0.75) +
   geom_jitter(width = 0.01, size = 2) +
-  ylab("trans. OY ~ scale (est.)") +
+  ylab("trans. OY ~ scale estimate") +
   xlab("species specialisation index") +
-  viridis::scale_colour_viridis(option = "C") +
-  # annotate(geom = "text", x = 0.1, y = 0.5, size = 3.5,
-           # label = paste("r^2 == ", round(summary(lm.b)$r.squared, 2)), parse = TRUE) +
+  viridis::scale_colour_viridis(option = "C", end = 0.9) +
   guides(color = guide_colourbar(title.position = "top", 
                                  title.vjust = 1,
                                  frame.colour = "black", 
@@ -633,7 +620,6 @@ f.5b <-
         legend.justification=c(1, 0), 
         legend.key.width=unit(1, "lines"), 
         legend.key.height=unit(1, "lines"),
-        # plot.margin = unit(c(3, 1, 0.5, 0.5), "lines"),
         legend.text = element_text(size = 7),
         legend.title = element_text(size = 8))
 
@@ -733,4 +719,4 @@ f.S6
 ggsave(filename = here("figures/fig_S6.pdf"), 
        plot = f.S6, width = 15.24, height = 20.32, units = "cm", dpi = 450)
 
-### end
+### END
