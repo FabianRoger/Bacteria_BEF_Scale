@@ -1,13 +1,15 @@
 
 # Simulate a BEF experiment
 
-# maybe I'm getting a bit off track but I need to explore why get different results
-# from single patch model compared to considering single patches in a metacommunity
-# model with zero dispersal... It doesn't really make sense now
+# load the relevant packages
+library(here)
+library(ggplot2)
+library(dplyr)
+library(pbapply)
 
-# maybe it's the way the model is implemented that means the uncertainty propagates differently?
+# load the functions
+source(here("mcomsimr_simulate_MC2_function.R"))
 
-# get landscapes and shit
 
 # set a seed
 set.seed(54258748)
@@ -15,18 +17,16 @@ set.seed(54258748)
 # set-up model inputs
 species <- 3
 patches <- 3
-timesteps <- 500
+timesteps <- 100
 temp_fluc = 0.025
-dispersal = 0
+dispersal = 0.05
 start_abun = 60
 extirp_prob = 0.000001
 
-optima = seq(0.2, 0.8, length.out = species)
-env_niche_breadth = c(0.2, 0.2, 0.2)
 max_r = 0.5
 K_max = 150
 
-int_min = 1
+int_min = 0
 int_max = 1
 intra = 1
 
@@ -39,131 +39,153 @@ l.1 <-
 # generate a random dispersal matrix
 d.1 <- mcomsimr::dispersal_matrix(landscape = l.1, torus = TRUE, kernel_exp = 0.1, plot = FALSE)
 
-# generate species environmental optima
-t.1 <- 
-  data.frame(species = 1:species,
-             optima = optima,
-             env_niche_breadth = env_niche_breadth,
-             max_r = max_r,
-             K_max = K_max)
+l.test <- 
+  pblapply(1:1000, function(z) {
+  
+  # competition matrices
+  si.1 <- matrix(runif(n = species*species, min = int_min, max = int_max), 
+                 nrow = species, ncol = species)
+  si.1[lower.tri(si.1)] = t(si.1)[lower.tri(si.1)]
+  diag(si.1) <- intra
+  
+  # species traits
+  optima = runif(n = species, 0.2, 0.8)
+  env_niche_breadth = runif(n = 1, 0.1, 0.4)
+  t.1 <- 
+    data.frame(species = 1:species,
+               optima = optima,
+               env_niche_breadth = env_niche_breadth,
+               max_r = max_r,
+               K_max = K_max)
+  
+  # environmental heterogeneity
+  e.1 <- Simulate_env(patches = patches, timesteps = timesteps,
+                      start_env = c(0.3, 0.5, 0.7), temp_fluc = 0.01)
+  
+  # Dispersal
+  
+  # simulate monocultures and mixtures in identical environmental conditions
+  MC_disp <- sim_metacomm_BEF(species = species, patches = patches,
+                              dispersal = dispersal,
+                              timesteps = timesteps, 
+                              start_abun = start_abun,
+                              extirp_prob = extirp_prob,
+                              landscape = l.1, 
+                              disp_mat = d.1, 
+                              env.df = e.1, 
+                              env_traits.df = t.1, 
+                              int_mat = si.1,
+                              meas_error = 5
+  )
+  
+  # extract the correctly processed data
+  MC_disp <- 
+    MC_disp$BEF_slope %>%
+    filter(time == max(time)) %>%
+    group_by(mono_mix, SR) %>% 
+    summarise(biomass = mean(biomass))
+  
+  # extract the BEF-slope
+  lm.x <- lm(biomass ~ SR, data = MC_disp)
+  B1 <- coef(lm.x)[2]
+  names(B1) <- NULL
+  
+  # get transgressive overyielding
+  TO1 <- 
+    MC_disp %>%
+    group_by(SR) %>%
+    summarise(biomass = max(biomass)) %>%
+    pull(biomass)
+  TO1 <- TO1[2]/TO1[1]
+  
+  
+  # No dispersal
+  
+  # simulate monocultures and mixtures in identical environmental conditions
+  MC_no_disp <- sim_metacomm_BEF(species = species, patches = patches,
+                                 dispersal = 0,
+                                 timesteps = timesteps, 
+                                 start_abun = start_abun,
+                                 extirp_prob = extirp_prob,
+                                 landscape = l.1, 
+                                 disp_mat = d.1, 
+                                 env.df = e.1, 
+                                 env_traits.df = t.1, 
+                                 int_mat = si.1,
+                                 meas_error = 5
+  )
+  
+  # extract the correctly processed data
+  MC_no_disp <- 
+    MC_no_disp$BEF_slope %>%
+    filter(time == max(time))
+  
+  # calculate the species specialisation index
+  SI_index <- 
+    MC_no_disp %>%
+    filter(mono_mix != "mixture") %>%
+    group_by(patch) %>%
+    filter(biomass == max(biomass)) %>%
+    pull(mono_mix) %>%
+    unique() %>%
+    length()
+  SI_index <- SI_index/species
+  
+  B2 <- 
+    sapply(split(MC_no_disp, MC_no_disp$patch), function(x) {
+      lm.x <- lm(biomass ~ SR, data = x)
+      B <- coef(lm.x)[2]
+      names(B) <- NULL
+      return(B)
+    }) %>%
+    mean(.)
+  
+  TO2 <- 
+    sapply(split(MC_no_disp, MC_no_disp$patch), function(x) {
+      y <- 
+        x %>%
+        group_by(SR) %>%
+        summarise(biomass = max(biomass)) %>%
+        pull(biomass)
+      y[2]/y[1]
+    }) %>%
+    mean(.)
+  
+  return(data.frame(Scale = c("Large", "Small"),
+                    Ave_comp = mean(si.1[si.1 != 1]),
+                    SI_index = SI_index,
+                    BEF_slope = c(B1, B2),
+                    TO = c(TO1, TO2) ) )
+  
+})
 
-# competition matrices
-si.1 <- matrix(runif(n = species*species, min = int_min, max = int_max), 
-               nrow = species, ncol = species)
-si.1[lower.tri(si.1)] = t(si.1)[lower.tri(si.1)]
-diag(si.1) <- intra
-head(si.1)
-
-# environmental heterogeneity
-e.1 <- Simulate_env(patches = patches, timesteps = timesteps,
-                    start_env = c(0.3, 0.5, 0.7), temp_fluc = 0.01)
-
-ggplot(data = e.1,
-       mapping = aes(x = time, y = env1)) +
-  geom_line() +
-  facet_wrap(~patch) +
+bind_rows(l.test, .id = "run") %>%
+  ggplot(data = .,
+         mapping = aes(x = Scale, y = BEF_slope)) +
+  geom_jitter(alpha = 0.1) +
+  geom_boxplot(width = 0.2) +
   theme_classic()
 
-# simulate monocultures and mixtures in identical environmental conditions
-MC <- sim_metacomm_BEF(species = species, patches = patches,
-                       dispersal = dispersal,
-                       timesteps = timesteps, 
-                       start_abun = start_abun,
-                       extirp_prob = extirp_prob,
-                       landscape = l.1, 
-                       disp_mat = d.1, 
-                       env.df = e.1, 
-                       env_traits.df = t.1, 
-                       int_mat = si.1,
-                       meas_error = 5
-                       )
+bind_rows(l.test, .id = "run") %>%
+  ggplot(data = .,
+         mapping = aes(x = Scale, y = TO)) +
+  geom_jitter(alpha = 0.1) +
+  geom_boxplot(width = 0.2) +
+  theme_classic()
 
-# extract the correctly processed data
-MC <- MC$BEF_slope
-
-# add a identifier for the patch
-MC$landscape_type <- "metacommunity"
-
-# summarise at the landscape scale
-MC_sum <- 
-  MC %>%
-  group_by(landscape_type, mono_mix, SR, time) %>%
-  summarise(biomass = mean(biomass)) %>%
-  filter(time == max(time))
-
-
-# run the single patch equivalents
-MC_p1 <- lapply(1:patches, function(x) {
-  
-  y <- sim_metacomm_BEF(species = species, patches = 1,
-                        dispersal = dispersal,
-                        timesteps = timesteps, 
-                        start_abun = start_abun,
-                        extirp_prob = extirp_prob,
-                        landscape = l.1[1,], 
-                        disp_mat = NA, 
-                        env.df = e.1[e.1$patch == x,], 
-                        env_traits.df = t.1, 
-                        int_mat = si.1,
-                        meas_error = 5)
-  
-  y <- y$BEF_slope
-  
-  # correct the place name
-  y$patch <- x
-  
-  # add a identifier for the patch
-  y$landscape_type <- "single_patch"
-  
-  return(y)
-  
-  })
-
-# bind the non-interactive patches
-MC_p1 <- 
-  bind_rows(MC_p1) %>%
-  filter(time == max(time))
-
-
-MC_p1 <- 
-  MC_p1 %>%
-  group_by(patch) %>%
-  mutate(biomass_scaled = (biomass-mean(biomass))/sd(biomass) )
-
-split(MC_p1, MC_p1$patch) %>%
-  sapply(., function(x) {
-    lm.x <- lm(biomass ~ SR, data = x)
-    coef(lm.x)[2]
-  }) %>%
-  mean(.)
-
-MC_p1 %>%
-  group_by(mono_mix, SR) %>%
-  summarise(biomass = mean(biomass), .groups = "drop") %>%
-  mutate(biomass_scaled = (biomass-mean(biomass))/sd(biomass) ) %>%
-  lm(biomass ~ SR, data = .) %>%
-  coef(.)
-  
-MC <- 
-  MC %>%
-  group_by(patch) %>%
-  mutate(biomass_scaled = (biomass-mean(biomass))/sd(biomass))
-
-split(MC, MC$patch) %>%
-  sapply(., function(x) {
-    lm.x <- lm(biomass ~ SR, data = x)
-    coef(lm.x)[2]
-  }) %>%
-  mean(.)
-
-MC_sum$biomass_scaled <- scale(MC_sum$biomass)[,1]
-lm.x <- lm(biomass ~ SR, data = MC_sum)
-coef(lm.x)[2]
-
-
-
-
-
+# does the difference between large and small scales depend on species specialisation
+bind_rows(l.test, .id = "run") %>%
+  group_by(run) %>%
+  summarise(TO_diff = first(TO) - last(TO),
+            SI = mean(SI_index),
+            Comp = mean(Ave_comp)) %>%
+  filter(Comp > 0.5) %>%
+  ggplot(data = .,
+         mapping = aes(x = SI, y = TO_diff, colour = Comp)) +
+  geom_jitter(width = 0.1) +
+  geom_smooth(method = "lm") +
+  theme_classic()
+ 
 
 
 
