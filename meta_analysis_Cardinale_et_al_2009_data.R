@@ -22,10 +22,10 @@ source(here("function_plotting_theme.R"))
 ### download the raw data
 
 # data come from Cardinale et al. (2009): Effects of biodiversity on the functioning of ecosystems: a summary of 164 experimental manipulations of species richness, Ecology
-# link to the archive is: http://esapubs.org/archive/ecol/E090/060/metadata.htm
+# link to the archive is: https://esapubs.org/archive/ecol/E090/060/#data
 
 # load the raw data directly from the link
-card.dat <- read_csv(url("http://esapubs.org/archive/ecol/E090/060/BEF_summary_v2_Aug2008.csv"),
+card.dat <- read_csv("C:/Users/james/OneDrive/PhD_Gothenburg/Chapter_1_BEF_scale_meta-analysis/BEF_summary_v2_Aug2008.csv",
                      na = c(".", "NA"),)
 
 # check the parsing specifications
@@ -50,7 +50,7 @@ cd.sub %>%
   group_by(Sys2) %>%
   summarise(n = n())
 
-# based on this, let's only consider Sys2 == 7 (i.e. temperature grasslands)
+# based on this, let's only consider Sys2 == 7 (i.e. temperate grasslands)
 cd.sub <- 
   cd.sub %>%
   filter(Sys2 == 7)
@@ -74,15 +74,15 @@ cd.sub <-
   cd.sub %>%
   filter(!is.na(LnSPscale) | !is.na(LnTscale))
 
-# experiments with LRR1, Powerb and LRR2 (where most extreme monoculture is the highest)
+# experiments with LRR2 (where most extreme monoculture is the highest)
 cd.sub <- 
   cd.sub %>%
   filter(!is.na(YEmono)) %>%
-  filter(YEmono >= Y1) %>%
-  filter(!(is.na(LRR1) | is.na(Powerb) | is.na(LRR2)))
+  filter(YEmono >= Y1) %>% # if the most extreme monoculture (YEmono) exceed the mean, then it is the highest
+  filter(!(is.na(LRR2)))
 
 cd.sub %>%
-  select(LnSPscale, LnTscale, LRR1, Powerb, LRR2) %>%
+  select(LnSPscale, LnTscale, LRR2) %>%
   lapply(., function(x) { sum(if_else(is.na(x), 1, 0)) })
 
 
@@ -127,48 +127,30 @@ cd.sub %>%
 length(unique(cd.sub$Entry)) == length(unique(cd.sub$Expt)) 
 
 # add raw transgressive variable to the dataset
+# YSmax - response variable at the maximum species richness
+# YEmono - response variable value for the most extreme monoculture
 cd.sub$trans.oy <- (cd.sub$YSmax/cd.sub$YEmono)
 
 
-### plot Powerb and trans.oy
-r.vars <- c("Powerb", "trans.oy")
-
-# get residuals from time-scale regression
-for (i in r.vars) {
-  
-  # get residuals from Tscale regression on response
-  lm.ts <- lm(reformulate("LnTscale", i), data = cd.sub)
-  
-  # add these residuals to the cd.lrr1 data
-  cd.sub[paste(i, "res", sep = ".")] <- residuals(lm.ts)
-}
-
-
-# how much does Smax and Slevels differ among experiments?
-cd.sub %>%
-  select(Smax, Slevels) %>%
-  summary()
-
-
-# plot out the results
-
-# power b
-ggplot(data = cd.sub,
-       mapping = aes(x = LnSPscale, y = Powerb.res)) +
-  geom_point() +
-  geom_smooth(method = "lm", colour = "black", alpha = 0.2) +
-  xlab("ln-spatial scale index") +
-  ylab("parameter b") +
-  theme_meta()
+# plot out the results: Raw
 
 # transgressive overyielding
 ggplot(data = cd.sub,
-       mapping = aes(x = LnSPscale, y = trans.oy.res)) +
+       mapping = aes(x = LnSPscale, y = (trans.oy) )) +
   geom_point() +
   geom_smooth(method = "lm", colour = "black", alpha = 0.2) +
   xlab("ln-spatial scale index") +
   ylab("trans. OY") +
   theme_meta()
 
+ggplot(data = cd.sub,
+       mapping = aes(x = LnSPscale, y = LRR2)) +
+  geom_point() +
+  geom_smooth(method = "lm", colour = "black", alpha = 0.2) +
+  xlab("ln-spatial scale index") +
+  ylab("trans. OY") +
+  theme_meta()
 
+# we also need to incorporate temporal scale as a covariate perhaps...
 
+# next time

@@ -200,27 +200,15 @@ cov.df.prep <-
   meta_an %>%
   select(Experiment_ID, Environment, Mixture_treatment, Mixture_ID, Ecosystem_function_mean)
 
-# calculate coefficient of variation among environments in mean function across monocultures and mixtures
-f.cv <- 
-  cov.df.prep %>%
-  group_by(Experiment_ID, Environment) %>%
-  summarise(function.m = mean(Ecosystem_function_mean, na.rm = TRUE), .groups = "drop") %>%
-  group_by(Experiment_ID) %>%
-  summarise(function.cv = (sd(function.m)/mean(function.m))*100, .groups = "drop")
-
 # calculate average and coefficient of variation in average overyielding across environments
-m.cv.oy <- 
+m.oy <- 
   cov.df.prep %>%
   group_by(Experiment_ID, Environment, Mixture_treatment) %>%
   summarise(function.m = mean(Ecosystem_function_mean, na.rm = TRUE), .groups = "drop") %>%
   pivot_wider(names_from = "Mixture_treatment", values_from = "function.m") %>%
   mutate(overyielding = mixture/monoculture) %>%
   group_by(Experiment_ID) %>%
-  summarise(overyielding.m = mean(overyielding, na.rm = TRUE),
-            overyielding.cv = (sd(overyielding)/mean(overyielding))*100, .groups = "drop")
-
-# join these data.frames
-cov.df <- full_join(f.cv, m.cv.oy, by = "Experiment_ID")
+  summarise(overyielding.m = mean(overyielding, na.rm = TRUE))
 
 # calculate the species specialisation index
 ss.i <- 
@@ -238,7 +226,7 @@ ss.i <-
 
 # join these data.frames   
 cov.df <- 
-  full_join(cov.df, ss.i, by = "Experiment_ID")
+  full_join(m.oy, ss.i, by = "Experiment_ID")
 
 
 ### join the covariates to the slopes between scale and l.rr and t.oy
@@ -247,6 +235,72 @@ est.cov <-
 
 
 ### plots and statistics for manuscript
+
+ggplot(data = l.df,
+       mapping = aes(x = environments, y = t.oy, colour = Experiment_ID)) +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  geom_smooth(method = "lm", se = FALSE, size = 0.5) +
+  geom_jitter(width = 0.1, alpha = 0.2) +
+  ylab("Trangressive overyielding") +
+  xlab("Scale") +
+  scale_colour_viridis_d(option = "C") +
+  theme(legend.position = "none") +
+  theme_meta()
+
+ggplot(data = l.est,
+       mapping = aes(x = t.oy.est)) +
+  ylab("") +
+  xlab("Trans. OY ~ scale (est.)") +
+  geom_histogram(alpha = 0.7) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme_meta()
+
+# plot raw correlation between average overyielding and species specialisation
+ggplot(data = est.cov,
+       mapping = aes(x = species.specialisation, y = t.oy.est, colour = overyielding.m)) +
+  geom_point() +
+  ylab("Trans. OY ~ scale (est.)") +
+  xlab("Species specialisation index") +
+  viridis::scale_colour_viridis(option = "C", end = 0.9) +
+  guides(color = guide_colourbar(title.position = "top", 
+                                 title.vjust = 1,
+                                 frame.colour = "black", 
+                                 ticks.colour = NA,
+                                 barwidth = 5,
+                                 barheight = 0.3)) +
+  theme_meta() +
+  theme(legend.position = c(0.6, 0.75),
+        legend.direction="horizontal",
+        legend.justification=c(1, 0), 
+        legend.key.width=unit(1, "lines"), 
+        legend.key.height=unit(1, "lines"),
+        # plot.margin = unit(c(3, 1, 0.5, 0.5), "lines"),
+        legend.text = element_text(size = 7),
+        legend.title = element_text(size = 8))
+
+# plot raw correlation between average overyielding and species specialisation
+ggplot(data = est.cov,
+       mapping = aes(x = overyielding.m, y = t.oy.est, colour = species.specialisation)) +
+  geom_point() +
+  ylab("Trans. OY ~ scale (est.)") +
+  xlab("Average overyielding") +
+  viridis::scale_colour_viridis(option = "C", end = 0.9) +
+  guides(color = guide_colourbar(title.position = "top", 
+                                 title.vjust = 1,
+                                 frame.colour = "black", 
+                                 ticks.colour = NA,
+                                 barwidth = 5,
+                                 barheight = 0.3)) +
+  theme_meta() +
+  theme(legend.position = c(0.6, 0.75),
+        legend.direction="horizontal",
+        legend.justification=c(1, 0), 
+        legend.key.width=unit(1, "lines"), 
+        legend.key.height=unit(1, "lines"),
+        # plot.margin = unit(c(3, 1, 0.5, 0.5), "lines"),
+        legend.text = element_text(size = 7),
+        legend.title = element_text(size = 8))
+
 
 # perform wilcoxon tests on scale-slopes
 
