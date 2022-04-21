@@ -236,7 +236,8 @@ est.cov <-
 
 ### plots and statistics for manuscript
 
-ggplot(data = l.df,
+x1 <- 
+  ggplot(data = l.df,
        mapping = aes(x = environments, y = t.oy, colour = Experiment_ID)) +
   geom_hline(yintercept = 1, linetype = "dashed") +
   geom_smooth(method = "lm", se = FALSE, size = 0.5) +
@@ -247,19 +248,22 @@ ggplot(data = l.df,
   theme(legend.position = "none") +
   theme_meta()
 
-ggplot(data = l.est,
+x2 <- 
+  ggplot(data = l.est,
        mapping = aes(x = t.oy.est)) +
   ylab("") +
-  xlab("Trans. OY ~ scale (est.)") +
-  geom_histogram(alpha = 0.7) +
+  xlab("Transgressive overyielding ~ scale (est.)") +
+  geom_histogram(alpha = 1) +
   geom_vline(xintercept = 0, linetype = "dashed") +
+  # scale_x_continuous(limits = c(-0.5, 0.6)) +
   theme_meta()
 
 # plot raw correlation between average overyielding and species specialisation
-ggplot(data = est.cov,
+x3 <- 
+  ggplot(data = est.cov,
        mapping = aes(x = species.specialisation, y = t.oy.est, colour = overyielding.m)) +
-  geom_point() +
-  ylab("Trans. OY ~ scale (est.)") +
+  geom_jitter(width = 0.01) +
+  ylab("Trangressive overyielding ~ scale (est.)") +
   xlab("Species specialisation index") +
   viridis::scale_colour_viridis(option = "C", end = 0.9) +
   guides(color = guide_colourbar(title.position = "top", 
@@ -268,6 +272,7 @@ ggplot(data = est.cov,
                                  ticks.colour = NA,
                                  barwidth = 5,
                                  barheight = 0.3)) +
+  labs(col="Average overyielding") +
   theme_meta() +
   theme(legend.position = c(0.6, 0.75),
         legend.direction="horizontal",
@@ -279,10 +284,11 @@ ggplot(data = est.cov,
         legend.title = element_text(size = 8))
 
 # plot raw correlation between average overyielding and species specialisation
-ggplot(data = est.cov,
+x4 <- 
+  ggplot(data = est.cov,
        mapping = aes(x = overyielding.m, y = t.oy.est, colour = species.specialisation)) +
   geom_point() +
-  ylab("Trans. OY ~ scale (est.)") +
+  ylab("Trangressive overyielding ~ scale (est.)") +
   xlab("Average overyielding") +
   viridis::scale_colour_viridis(option = "C", end = 0.9) +
   guides(color = guide_colourbar(title.position = "top", 
@@ -291,6 +297,7 @@ ggplot(data = est.cov,
                                  ticks.colour = NA,
                                  barwidth = 5,
                                  barheight = 0.3)) +
+  labs(col="Species specialisation") +
   theme_meta() +
   theme(legend.position = c(0.6, 0.75),
         legend.direction="horizontal",
@@ -301,6 +308,12 @@ ggplot(data = est.cov,
         legend.text = element_text(size = 7),
         legend.title = element_text(size = 8))
 
+fY <- ggpubr::ggarrange(x1, x2, x3,x4, ncol = 2, nrow = 2,
+                  labels = c("A", "B", "C", "D"),
+                  font.label = list(size = 10, color = "black", face = "bold", family = NULL))
+
+ggsave(filename = here("figures/fig_Y.pdf"), 
+       plot = fY, width = 18, height = 16, units = "cm", dpi = 450)
 
 # perform wilcoxon tests on scale-slopes
 

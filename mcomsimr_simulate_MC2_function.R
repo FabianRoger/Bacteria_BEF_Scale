@@ -35,7 +35,7 @@ simulate_MC2 <- function(patches, species, dispersal = 0.01, timesteps = 1200,
   
   dynamics.df <- data.frame()
   N <- matrix(rep(round(start_abun/species, 0), species*patches), nrow = patches, ncol = species)
-  pb <- txtProgressBar(min = 0, max = timesteps, style = 3)
+  # pb <- txtProgressBar(min = 0, max = timesteps, style = 3)
   for(i in 1:(timesteps)){
     
     # get the first environmental condition
@@ -86,9 +86,9 @@ simulate_MC2 <- function(patches, species, dispersal = 0.01, timesteps = 1200,
     N[rbinom(n = species * patches, size = 1, prob = extirp_prob)>0] <- 0
     
     dynamics.df <- rbind(dynamics.df, data.frame(N = c(N), patch = 1:patches, species = rep(1:species, each = patches), env = env, time = i))
-    setTxtProgressBar(pb, i)
+    # setTxtProgressBar(pb, i)
   }
-  close(pb)
+  # close(pb)
   
   # join the environmental traits to the dynamics
   dynamics.df <- dplyr::left_join(dynamics.df, env_traits.df, by = "species")

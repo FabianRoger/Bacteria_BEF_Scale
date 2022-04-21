@@ -9,6 +9,7 @@ library(pbapply)
 
 # load the functions
 source(here("mcomsimr_simulate_MC2_function.R"))
+source(here("function_plotting_theme.R"))
 
 
 # set a seed
@@ -17,16 +18,15 @@ set.seed(54258748)
 # set-up model inputs
 species <- 3
 patches <- 3
-timesteps <- 100
-temp_fluc = 0.025
-dispersal = 0.05
+timesteps <- 50
+temp_fluc = 0.02
 start_abun = 60
 extirp_prob = 0.000001
 
 max_r = 0.5
 K_max = 150
 
-int_min = 0
+int_min = 0.1
 int_max = 1
 intra = 1
 
@@ -39,8 +39,12 @@ l.1 <-
 # generate a random dispersal matrix
 d.1 <- mcomsimr::dispersal_matrix(landscape = l.1, torus = TRUE, kernel_exp = 0.1, plot = FALSE)
 
+# generate a set of dispersal rates
+N_reps <- 1000
+dispersal <- rep(c(0.05, 0.2, 0.5), each = N_reps)
+
 l.test <- 
-  pblapply(1:1000, function(z) {
+  pblapply(1:length(dispersal), function(z) {
   
   # competition matrices
   si.1 <- matrix(runif(n = species*species, min = int_min, max = int_max), 
@@ -49,8 +53,8 @@ l.test <-
   diag(si.1) <- intra
   
   # species traits
-  optima = runif(n = species, 0.2, 0.8)
-  env_niche_breadth = runif(n = 1, 0.1, 0.4)
+  optima = runif(n = species, 0.1, 0.9)
+  env_niche_breadth = runif(n = 1, 0.05, 0.5)
   t.1 <- 
     data.frame(species = 1:species,
                optima = optima,
@@ -60,13 +64,27 @@ l.test <-
   
   # environmental heterogeneity
   e.1 <- Simulate_env(patches = patches, timesteps = timesteps,
-                      start_env = c(0.3, 0.5, 0.7), temp_fluc = 0.01)
+                      start_env = c(0.3, 0.5, 0.7), temp_fluc = temp_fluc)
   
-  # Dispersal
+  # calculate mean spatial heterogeneity
+  Spat_het <- 
+    e.1 %>%
+    group_by(time) %>%
+    summarise(env1_CV = (sd(env1)/mean(env1))*100, .groups = "drop" ) %>%
+    pull(env1_CV) %>%
+    mean(.)
+  
+  # calculate mean temporal heterogeneity
+  Temp_het <- 
+    e.1 %>%
+    group_by(patch) %>%
+    summarise(env1_CV = (sd(env1)/mean(env1))*100 ) %>%
+    pull(env1_CV) %>%
+    mean(.)
   
   # simulate monocultures and mixtures in identical environmental conditions
   MC_disp <- sim_metacomm_BEF(species = species, patches = patches,
-                              dispersal = dispersal,
+                              dispersal = dispersal[z],
                               timesteps = timesteps, 
                               start_abun = start_abun,
                               extirp_prob = extirp_prob,
@@ -152,6 +170,9 @@ l.test <-
     mean(.)
   
   return(data.frame(Scale = c("Large", "Small"),
+                    Dispersal_large = dispersal[z],
+                    Spat_het = Spat_het,
+                    Temp_het = Temp_het,
                     Ave_comp = mean(si.1[si.1 != 1]),
                     SI_index = SI_index,
                     BEF_slope = c(B1, B2),
@@ -159,36 +180,78 @@ l.test <-
   
 })
 
-bind_rows(l.test, .id = "run") %>%
-  ggplot(data = .,
-         mapping = aes(x = Scale, y = BEF_slope)) +
-  geom_jitter(alpha = 0.1) +
-  geom_boxplot(width = 0.2) +
-  theme_classic()
+# save these data
+readr::write_csv(x = bind_rows(l.test, .id = "run"),
+                 file = here("data/approach2_MC_model.csv"))
 
-bind_rows(l.test, .id = "run") %>%
+# read in these data as well
+
+library(ggbeeswarm)
+p12.dat <- 
+  bind_rows(l.test, .id = "run") %>%
+  filter(!is.na(TO) & !is.infinite(TO) & !is.nan(TO)) %>%
+  mutate(Dispersal = as.character(Dispersal_large),
+         Scale = if_else(Scale == "Large", "Regional", "Local"))
+
+p1 <- 
+  ggplot() +
+  geom_beeswarm(data = p12.dat,
+                mapping = aes(x = Scale, y = TO, colour = Dispersal), 
+                priority = c("random"), cex = 0.5,inherit.aes = FALSE, alpha = 0.1) +
+  geom_boxplot(data = p12.dat,
+               mapping = aes(x = Scale, y = TO, colour = Dispersal), 
+               width = 0.1, outlier.shape = NA, show.legend = FALSE) +
+  facet_wrap(~Dispersal_large) +
+  #guides(color = guide_legend(override.aes = list(size = 3,
+                                                  # alpha = 1) ) ) +
+  theme_meta() +
+  scale_fill_viridis_d(option = "C", end = 0.9) +
+  scale_colour_viridis_d(option = "C", end = 0.9) +
+  ylab("Transgressive overyielding") +
+  theme(legend.position = "none")
+  # theme(legend.position = "bottom",
+        # legend.key = element_rect(colour = 'white', fill = 'white', size = 0.5, linetype='dashed'))
+plot(p1)  
+
+# calculate contrasts
+head(p12.dat)
+p2 <- 
+  p12.dat %>%
+  group_by(Dispersal, run) %>%
+  summarise(TO = diff(sort(TO)), .groups = "drop") %>%
   ggplot(data = .,
-         mapping = aes(x = Scale, y = TO)) +
-  geom_jitter(alpha = 0.1) +
-  geom_boxplot(width = 0.2) +
-  theme_classic()
+         mapping = aes(x = TO, colour = Dispersal, fill = Dispersal)) +
+  geom_histogram() +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  xlab("Regional - local transgressive overyielding") +
+  ylab("Count") +
+  facet_wrap(~Dispersal) +
+  scale_x_continuous(breaks = c(0, 1, 2)) +
+  scale_fill_viridis_d(option = "C", end = 0.9) +
+  scale_colour_viridis_d(option = "C", end = 0.9) +
+  theme_meta() +
+  theme(legend.position = "none")
+plot(p2)
+
+fX <- ggpubr::ggarrange(p1, p2, ncol = 2, nrow = 1,
+                  widths = c(1, 1),
+                  labels = c("A", "B"),
+                  font.label = list(size = 10, color = "black", face = "bold", family = NULL) )
+
+ggsave(filename = here("figures/fig_X.pdf"), 
+       plot = fX, width = 18, height = 7.5, units = "cm", dpi = 450)
 
 # does the difference between large and small scales depend on species specialisation
 bind_rows(l.test, .id = "run") %>%
-  group_by(run) %>%
+  group_by(Dispersal_large, run) %>%
   summarise(TO_diff = first(TO) - last(TO),
             SI = mean(SI_index),
             Comp = mean(Ave_comp)) %>%
-  filter(Comp > 0.5) %>%
+  # filter(Comp > 0.5) %>%
   ggplot(data = .,
-         mapping = aes(x = SI, y = TO_diff, colour = Comp)) +
+         mapping = aes(x = SI, y = TO_diff, colour = as.character(Dispersal_large))) +
   geom_jitter(width = 0.1) +
   geom_smooth(method = "lm") +
-  theme_classic()
+  theme_meta()
  
-
-
-
-
-
- 
+### END
