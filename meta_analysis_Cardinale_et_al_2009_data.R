@@ -135,13 +135,19 @@ cd.sub$trans.oy <- (cd.sub$YSmax/cd.sub$YEmono)
 # plot out the results: Raw
 
 # transgressive overyielding
-ggplot(data = cd.sub,
+p1 <- 
+  ggplot(data = cd.sub,
        mapping = aes(x = LnSPscale, y = (trans.oy) )) +
   geom_point() +
   geom_smooth(method = "lm", colour = "black", alpha = 0.2) +
   xlab("ln-spatial scale index") +
   ylab("trans. OY") +
   theme_meta()
+
+ggsave(filename = here("figures/fig_V.pdf"), 
+       plot = p1, width = 9, height = 7.5, units = "cm", dpi = 450)
+
+cor.test(cd.sub$LnSPscale, cd.sub$trans.oy)
 
 ggplot(data = cd.sub,
        mapping = aes(x = LnSPscale, y = LRR2)) +
