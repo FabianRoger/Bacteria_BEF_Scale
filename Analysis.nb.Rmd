@@ -15,6 +15,7 @@ library(ggplot2)
 library(viridis)
 library(purrr)
 library(gridExtra)
+library(nlstools)
 
 # check that the Hmisc package is installed
 if(! "Hmisc" %in% installed.packages()[,1]) stop(
@@ -543,6 +544,7 @@ env_metrics %>%
   ggplot(aes(x = envnum, y = value)) +
   geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1) )+
   stat_smooth(method = "lm", se = T, size = 0.5, colour = "black")+
+  geom_hline(yintercept = 1, colour = "black", linetype = "dashed") +
   theme_meta()+
   labs(y = "Transgressive overyielding", x = "Scale")+
   theme(legend.position = "none",

@@ -13,7 +13,6 @@ library(broom)
 library(viridis)
 library(here)
 library(pbapply)
-library(nlstools)
 library(ggridges)
 source(here("function_plotting_theme.R"))
 ```
@@ -529,7 +528,7 @@ Fig_2_a_i
 
 ```
 
-###Fig 2b
+###Fig 2b: Transgressive overyielding
 ```{r}
 med_slope <- 
 Results %>% 
@@ -549,10 +548,11 @@ Results_pred %>%
 
 Fig_2_b <- 
 ggplot(Results_trans, aes(x = env_pred, y = predict, group = rep))+
-  geom_line(size = 0.5, alpha = 0.1, colour = col_2)+
-  geom_line(data = Results_trans %>% filter(rep == pull(filter(med_slope, slope_q == "median"), rep)), colour = "darkred", size = 1)+
-  theme_classic()+
-  labs(y = "transgressive overyielding", x = "scale")+
+  geom_line(size = 0.5, alpha = 0.1, colour = "grey")+
+  geom_line(data = Results_trans %>% filter(rep == pull(filter(med_slope, slope_q == "median"), rep)), colour = "black", size = 1)+
+  geom_hline(yintercept = 1, colour = "black", linetype = "dashed") +
+  theme_meta()+
+  labs(y = "Transgressive overyielding", x = "Scale")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
@@ -581,19 +581,21 @@ Results_trans <-
 
 Fig_2_b_i <- 
 ggplot(Results_trans, aes(x = slope))+
-  geom_histogram(binwidth = 0.006, fill = col_2)+
+  geom_histogram(binwidth = 0.006, fill = "grey")+
   geom_vline(xintercept = 0, linetype = "dashed")+
   annotate(geom = "point", x = quantile_res[2], y = 6)+
   annotate(geom = "errorbarh", 
            xmax = quantile_res[1], 
            xmin = quantile_res[3],
            y = 6)+
-  theme_bw()+
-  theme(legend.position = "none")+
-  labs(y = paste("n out of", N, "draws", sep = " "),
-       title = "change in transgressive overyielding with scale",
-       x = "transgressive overyileding ~ scale")+
-  scale_x_continuous(limits = c(-0.07, 0.157))
+  theme_meta()+
+  theme(legend.position = "none", 
+        title = element_text(size = 10))+
+  labs(y = paste("N draws (total ", N, ")", sep = ""),
+       title = "Change in transgressive overyielding with scale",
+       x = "Transgressive overyielding ~ scale (est.)")+
+  scale_x_continuous(limits = c(-0.07, 0.157)) +
+  theme(axis.text = element_text(size = 5))
 
 
   save("Fig_2_b_i", file = here("figures", "Fig_2_b_i.RData"))
@@ -665,7 +667,7 @@ ggplot(data = ., aes(x = transgressive, y = envnum,
   theme_minimal()+
   scale_fill_manual(values = c("grey", "darkred"))+
   theme(legend.position = "none")+
-  labs(x = "Transgressive overyielding", y = "scale")+
+  labs(x = "Transgressive overyielding", y = "Scale")+
   theme_meta()
 
 ggsave(filename = here("figures", "Fig_S2.pdf"), width = 6, height = 4)
@@ -711,7 +713,7 @@ ggplot(sppT, aes(x = spec_spec, y = transgressive))+
   geom_beeswarm(shape = 21, fill = NA, colour = "#2ca25f")+
   geom_smooth(se = FALSE, method = "lm", colour = "black", size = 0.5)+
   theme_bw()+
-  labs(x = "species specialisation index", y = expression(scale - OY[trans]-slope))+
+  labs(x = "Species specialisation index", y = "Transgressive overyielding ~ scale (est.)"  )+
   theme_meta()
 
 ggsave(filename = here("figures", "Fig_S7.pdf"), width = 6, height = 4)
