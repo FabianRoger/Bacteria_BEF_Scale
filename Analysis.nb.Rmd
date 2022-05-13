@@ -15,12 +15,14 @@ library(ggplot2)
 library(viridis)
 library(purrr)
 library(gridExtra)
-library(nlstools)
 
 # check that the Hmisc package is installed
 if(! "Hmisc" %in% installed.packages()[,1]) stop(
     "this script requires the 'Hmisc' to be installed"
   )
+
+# load the plotting theme function
+source(here("function_plotting_theme.R"))
 ```
 
 This script exports: 
@@ -147,9 +149,6 @@ ssp <- length(unique(dom_strains)) / length(dom_strains)
 
 ```
 
-
-
-
 ## Fig. 3A 
 Production of each strain in each environment.
 
@@ -181,16 +180,16 @@ Data %>%
                fatten = 2
                )+
   scale_y_log10()+
-  theme_bw()+
+  theme_meta()+
   guides(colour = guide_legend(override.aes = list(size = 4, alpha = 1)))+
-  scale_color_manual(values = viridis(6, option = "C")[1:5])+
-  labs(y = "production (millions of cells)", x = "strain", colour = "Habitat")
+  scale_color_viridis_d(option = "C", end = 0.9) +
+  labs(y = "Production (millions of cells)", x = "Strain", colour = "Habitat")
 
 if(!Sens_analysis){
   save("Fig_3A", file = here("figures", "Fig_3A.RData"))
 }
 
-Fig_3A 
+Fig_3A
 ```
 
 + Test if monoculture values vary significantly between species in each environment (such that transgressive overyielding doesn't just vary with noise)
@@ -228,16 +227,16 @@ Data %>%
   mutate(power_fit = map(power_fit, augment, se_fit = TRUE)) %>% 
   unnest(cols = c(data, power_fit)) %>% 
   ggplot(aes(x = Richness, y = GrowthYield/1e6, colour = Antibiotic))+
-  geom_point(position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0), 
-             alpha = 0.2, size = 0.2)+
+  geom_point(position = position_jitterdodge(dodge.width = 0.5, jitter.width = 0.05),
+             size = 0.75, alpha = 0.25, shape = 19)+
   geom_line(aes(x = Richness, 
                   y = exp(.fitted)/1e6, 
                   group = Antibiotic), 
             position = position_jitterdodge(jitter.width = 0.3, jitter.height = 0))+
-  theme_bw()+
+  theme_meta()+
   labs(y = "production", x = "strain richness")+
   scale_y_log10()+
-  scale_color_manual(values = viridis(6, option = "C")[1:5])
+  scale_color_viridis_d(option = "C", end = 0.9)
 
 if(!Sens_analysis){
   save("Fig_3B", file = here("figures", "Fig_3B.RData"))
@@ -297,10 +296,11 @@ plots[[i]] <-
             size = 0.5)+
   facet_wrap(~Antibiotic, scales = "free_y")+
   scale_color_manual(values = c("grey", "#4DAF4A"), name = "Strain in mixture")+
-  theme_bw()+
+  theme_meta()+
   theme(legend.position = if(i == 1){c(0.9, 0.2)} else{"none"})+
   labs(title = paste("Strain", ifelse(strain[i] == "a", "a", letters[which(letters == strain[i])-1])),
-       y = "production")
+       y = "Production") +
+  theme(title = element_text(size = 10))
   
 }
 
@@ -400,10 +400,10 @@ env_values %>%
   ggplot(aes(x = richness, y = functioning/1e8, colour = as.factor(envnum)))+
   geom_point(aes(group = env_comb), size = 1, alpha = 1, position = position_dodge(width = 0.7))+
   geom_line(aes(y = .fitted/1e8, group = env_comb), position = position_dodge(width = 0.7))+
-  scale_color_manual(values = viridis(6)[1:5], name = "scale")+
-  theme_classic()+
+  scale_color_manual(values = viridis(6)[1:5], name = "Scale")+
+  theme_meta()+
   facet_wrap(~envnum)+
-  labs(y = paste("production x", expression(1e8)), x = "species richness")+
+  labs(y = paste("Production x", expression(1e8)), x = "Species richness")+
   guides(colour = guide_legend(ncol = 3))+
   theme(legend.position = c(0.85,0.25), 
         legend.background = element_rect(fill = "transparent"),
@@ -440,7 +440,7 @@ env_values %>%
 
 ```
 
-now we calculate the remaining BEF metrics (transgressice overyielding and slopes)
+Now we calculate the remaining BEF metrics (transgressive overyielding and slopes)
 
 ```{r}
 
@@ -541,10 +541,10 @@ env_metrics %>%
   gather(metric, value, -envnum, -env_comb) %>% 
   filter(metric == "transgressive") %>% 
   ggplot(aes(x = envnum, y = value)) +
-  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1), colour = viridis(n = 1, alpha = 1, begin = 0.5, end = 0.5, option = "C"))+
-  stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
-  theme_classic()+
-  labs(y = "transgressive overyielding", x = "scale")+
+  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1) )+
+  stat_smooth(method = "lm", se = T, size = 0.5, colour = "black")+
+  theme_meta()+
+  labs(y = "Transgressive overyielding", x = "Scale")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
