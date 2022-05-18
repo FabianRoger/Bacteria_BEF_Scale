@@ -179,19 +179,18 @@ plot_values_df %>%
 
 ```
 
-## BEF metrics
+## Transgressive overyielding
 
-We calculate the slope between richness and functioning for all combinations of environments. 
+We calculate the transgressive overyielding for all combinations of environments. 
 
 + for all scales (1:5 environments)
 + for all possible unique combinations of environments 
 
-We calculate the functioning of a given species mixture in that combination of environments at that scale as the average functioning of that species mixture in the single environments. 
+We calculate the functioning of a given species mixture (or monoculture) in that combination of environments at that scale as the average functioning of that species mixture in the single environments. 
 
-For each scale and environment combination we then calculate the following metrics:
+**Transgressive overyielding** is calculated as:
 
-+ the **slope of a power fit** to the richness ~ functioning relationship
-+ **transgressive overyielding**: highest mixture value / maximum monoculture value
++ highest mixture value / maximum monoculture value
 
 
 ```{r, warning=FALSE}
@@ -220,9 +219,7 @@ env_values <- bind_rows(unlist(env_values, recursive = FALSE))
 env_metrics <- 
   env_values %>% 
   group_by(env_comb, envnum) %>%
-  nest() %>% 
-  mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., start = list(a = 1, b = 1)))) %>%
-  mutate(power_fit = map_dbl(power_fit, function(x) coef(x)[2])) %>%
+  nest() %>%
   mutate(transgressive = map_dbl(data, function(x) {
     x[x$richness == specnum,]$functioning / 
       max(x[x$richness == 1,]$functioning)})) 
@@ -257,34 +254,7 @@ env_values %>%
 ```
 
 
-
-### plot power-fits by scale
-
-```{r}
-
-env_metrics %>% 
-  select(-data) %>% 
-  gather(metric, value, -envnum, -env_comb) %>%
-  filter(metric == "power_fit") %>% 
-  #filter(metric == "MichMent") %>% 
-  ggplot(aes(x = envnum, y = value))+#, colour = as.factor(envnum)))+
-  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1), colour = viridis(6)[3])+
-  stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred", linetype = "dashed")+
- # scale_color_manual(values = viridis(envnum+1)[1:envnum], name = "scale")+
-  theme_classic()+
-  labs(y = "beta_slopes", x = "scale")+
-  theme(legend.position = "none",
-        axis.ticks.length=unit(-0.25, "cm"),
-        axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
-        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )+
-  scale_y_continuous(limits = c(0,0.26))+
-  NULL
-
-
-```
-
-
-### plot transgressive overyielding
+### plot transgressive overyielding by scale
 ```{r}
 
 env_metrics %>% 
@@ -367,7 +337,7 @@ return(plot_values_df)
 ```
 
 
-###BEF metrics
+### Transgressive overyielding
 ```{r}
 
 env_metrics_list <- 
@@ -410,18 +380,8 @@ env_metrics %>%
   filter(metric == "transgressive") %>% 
   lm(value ~ envnum, data = .)
 
-beta_slopes <- 
-env_values %>% 
-  group_by(envnum, env_comb) %>%
-  nest() %>% 
-  mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., start = list(a = 1, b = 1)))) %>%
-  mutate(beta = map_dbl(power_fit, function(x) coef(x)[2])) %>%
-  lm(beta~envnum, data = .) #%>% 
 
-
-return(tibble(transgressive = list(transgressive),
-              beta_slopes = list(beta_slopes)
-              ))
+return(tibble(transgressive = list(transgressive)))
 }
 )
 
@@ -435,18 +395,20 @@ Results <-
   mutate(slope = map_dbl(map(.$value, coef),"envnum")) %>% 
   mutate(Intercept = map_dbl(map(.$value, coef),"(Intercept)")) %>% 
   select(-value)
+
 ```
 
 ##Fig 2 - slopes and histograms 
 
-colour
+###Fig 2b: Transgressive overyielding
 ```{r}
-library(RColorBrewer)
-col_2 <- viridis(6)[3]
-```
 
-###Fig 2a
-```{r}
+# calculate the median slope and the 90% percentiles
+median(Results$slope)
+quantile(Results$slope, c(0.05, 0.95))
+
+
+# predict new data
 env_pred = seq(1,5,0.1)
 
 newdata = tibble(rep = rep(1:nrow(Results), each = length(env_pred)),
@@ -457,83 +419,10 @@ Results_pred <-
   mutate(rep = 1:n()) %>% 
   left_join(newdata) %>% 
   mutate(predict = slope*env_pred+Intercept)
- 
+
 med_slope <- 
 Results %>% 
   mutate(rep = 1:n()) %>% 
-  filter(metric == "beta_slopes") %>% 
-  slice(1:999) %>% #has to be odd number to find exact media
-  mutate(slope_q = 
-  case_when(abs(slope - median(slope)) == min(abs(slope - median(slope))) ~ "median",
-            abs(slope - quantile(slope, 0.025)) == min( abs(slope - quantile(slope, 0.025))) ~ "low_q",
-            abs(slope - quantile(slope, 0.975)) == min( abs(slope - quantile(slope, 0.975))) ~ "high_q")) %>% 
-  filter(!is.na(slope_q))
-
-Results_beta <- 
-Results_pred %>% 
-  filter(metric == "beta_slopes")  
-
-Fig_2_a <- 
-  ggplot(Results_beta, aes(x = env_pred, y = predict, group = rep))+
-  geom_line(size = 0.5, alpha = 0.1, colour = col_2)+
-  geom_line(data = Results_beta %>% filter(rep == pull(filter(med_slope,
-                                                   slope_q == "median"), rep)), 
-            colour = "darkred", size = 1)+
-  theme_classic()+
-  labs(y = "beta slope", x = "scale")+
-  theme(legend.position = "none",
-        axis.ticks.length=unit(-0.25, "cm"),
-        axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
-        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )+
-  scale_y_continuous(limits = c(-0.2, NA))
-
-
-  
-save("Fig_2_a", file = here("figures", "Fig_2_a.RData"))
-
-Fig_2_a
-
-```
-
-###Fig 2a - inset
-```{r}
-
-quantile_res <- 
-Results %>% 
-  filter(metric == "beta_slopes") %>% 
-  pull(slope) %>% 
-  quantile(probs = c(0.025, 0.5, 0.975))
-
-Fig_2_a_i <- 
-Results %>% 
-  filter(metric == "beta_slopes") %>% 
-  ggplot(aes(x = slope))+
-  geom_histogram(binwidth = 0.001, fill = col_2)+
-  geom_vline(xintercept = 0, linetype = "dashed")+
-  annotate(geom = "point", x = quantile_res[2], y = 10)+
-  annotate(geom = "errorbarh", xmax = quantile_res[1], 
-           xmin = quantile_res[3], y = 10)+
-  #geom_point(data = . %>% summarise(beta_slopes = median(beta_slopes)), aes(x = beta_slopes, y = 50))+
-  theme_bw()+
-  theme(legend.position = "none")+
-  labs(y = paste("n out of", N, "draws", sep = " "),
-       title = "change in production ~ richness relationship with scale",
-       x = "")
-  
-
-
-save("Fig_2_a_i", file = here("figures", "Fig_2_a_i.RData"))
-
-Fig_2_a_i
-
-```
-
-###Fig 2b: Transgressive overyielding
-```{r}
-med_slope <- 
-Results %>% 
-  mutate(rep = 1:n()) %>% 
-  filter(metric == "transgressive")  %>% 
   slice(1:999) %>% #has to be odd number to find exact media
   mutate(slope_q = 
   case_when(abs(slope - median(slope)) == min(abs(slope - median(slope))) ~ "median",
@@ -542,14 +431,10 @@ Results %>%
   filter(!is.na(slope_q))
 
 
-Results_trans <- 
-Results_pred %>% 
-  filter(metric == "transgressive")  
-
-Fig_2_b <- 
-ggplot(Results_trans, aes(x = env_pred, y = predict, group = rep))+
+Fig_2a <- 
+ggplot(Results_pred, aes(x = env_pred, y = predict, group = rep))+
   geom_line(size = 0.5, alpha = 0.1, colour = "grey")+
-  geom_line(data = Results_trans %>% filter(rep == pull(filter(med_slope, slope_q == "median"), rep)), colour = "black", size = 1)+
+  geom_line(data = Results_pred %>% filter(rep == pull(filter(med_slope, slope_q == "median"), rep)), colour = "black", size = 1)+
   geom_hline(yintercept = 1, colour = "black", linetype = "dashed") +
   theme_meta()+
   labs(y = "Transgressive overyielding", x = "Scale")+
@@ -560,10 +445,10 @@ ggplot(Results_trans, aes(x = env_pred, y = predict, group = rep))+
   scale_y_continuous(limits = c(-0.2, NA))
 
 
-save("Fig_2_b", file = here("figures", "Fig_2_b.RData"))
+save("Fig_2a", file = here("figures", "Fig_2a.RData"))
 
 
-Fig_2_b  
+Fig_2a
 ```
 
 ##Fig 2b inset
@@ -571,16 +456,11 @@ Fig_2_b
 
 quantile_res <- 
 Results %>% 
-  filter(metric == "transgressive") %>% 
   pull(slope) %>% 
   quantile(probs = c(0.025, 0.5, 0.975))
 
-Results_trans <- 
-  Results %>% 
-  filter(metric == "transgressive") 
-
-Fig_2_b_i <- 
-ggplot(Results_trans, aes(x = slope))+
+Fig_2a_i <- 
+ggplot(Results_pred, aes(x = slope))+
   geom_histogram(binwidth = 0.006, fill = "grey")+
   geom_vline(xintercept = 0, linetype = "dashed")+
   annotate(geom = "point", x = quantile_res[2], y = 6)+
@@ -598,9 +478,9 @@ ggplot(Results_trans, aes(x = slope))+
   theme(axis.text = element_text(size = 5))
 
 
-  save("Fig_2_b_i", file = here("figures", "Fig_2_b_i.RData"))
+  save("Fig_2a_i", file = here("figures", "Fig_2a_i.RData"))
  
-Fig_2_b_i
+Fig_2a_i
 ```
 
 ##Fig S2 
@@ -646,7 +526,6 @@ return(env_metrics)
 })
 
 
-
 mean_transgressive <- 
 lapply(env_metrics_transgressive, function(df) {
   
@@ -656,35 +535,14 @@ lapply(env_metrics_transgressive, function(df) {
 }) %>% 
   bind_rows(.id = "run") 
 
-FigS2 <- 
-mean_transgressive %>% 
-  mutate(over_one = transgressive > 1) %>% 
-  mutate(envnum = factor(envnum, levels = as.character(5:1))) %>% 
-ggplot(data = ., aes(x = transgressive, y = envnum,
-                     fill = ..x..> 1))+
-  geom_density_ridges_gradient()+
-  geom_vline(xintercept = 1, linetype = "dashed")+
-  theme_minimal()+
-  scale_fill_manual(values = c("grey", "darkred"))+
-  theme(legend.position = "none")+
-  labs(x = "Transgressive overyielding", y = "Scale")+
-  theme_meta()
-
-ggsave(filename = here("figures", "Fig_S2.pdf"), width = 6, height = 4)
-
-FigS2
-```
-
-## summary statistic
-
-```{r}
 mean_transgressive %>% 
   mutate(transgressive = transgressive > 1) %>% 
   group_by(envnum) %>% 
   summarise(`trans. OY > 1 (%)`=sum(transgressive) / n())
+
 ```
 
-##Fig S7 - species specialisation
+##Fig S6 - species specialisation
 
 This code investigates the relationship between transgressive overyielding and the species specialization index.
 
@@ -716,7 +574,7 @@ ggplot(sppT, aes(x = spec_spec, y = transgressive))+
   labs(x = "Species specialisation index", y = "Transgressive overyielding ~ scale (est.)"  )+
   theme_meta()
 
-ggsave(filename = here("figures", "Fig_S7.pdf"), width = 6, height = 4)
+ggsave(filename = here("figures", "Fig_S6.pdf"), width = 6, height = 4)
 
 
 ```
