@@ -30,7 +30,7 @@ This script exports:
 + Fig. 2b
 + Fig S3
 + Fig S4
-+ the subplots for Figure S9
++ the subplots for Figure S7
 
 See script `3_plot_Fig_2.Rmd` for the assemblage and export of figure 2, 3 and S9. 
 
@@ -111,8 +111,8 @@ To run the code and produce Fig S4 and S9, set `Sens_analysis = TRUE`
 Note that all the code will be executed when `Sens_analysis = TRUE` but the other figures will not be exported. 
 ```{r}
 
-Sens_analysis = FALSE
-#Sens_analysis = TRUE
+# Sens_analysis = FALSE
+Sens_analysis = TRUE
 
 if(Sens_analysis){
   
@@ -437,7 +437,7 @@ env_metrics <-
 ```
 
 
-### Fig 2d / S9 - transgressive overyielding
+### Fig 2b / S7 - transgressive overyielding
 ```{r}
 Fig_2b <- 
 env_metrics %>% 
@@ -462,7 +462,7 @@ save("Fig_2b", file = here("figures", "Fig_2b.RData"))
 }
 
 if(Sens_analysis){
-save("Fig_2b", file = here("figures", "Fig_S9.RData"))
+save("Fig_2b", file = here("figures", "Fig_S7.RData"))
 }
   
 Fig_2b
