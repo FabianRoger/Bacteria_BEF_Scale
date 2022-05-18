@@ -12,10 +12,8 @@ library(broom)
 library(forcats)
 library(readr)
 library(ggplot2)
-library(viridis)
 library(purrr)
 library(gridExtra)
-library(nlstools)
 
 # check that the Hmisc package is installed
 if(! "Hmisc" %in% installed.packages()[,1]) stop(
@@ -28,13 +26,13 @@ source(here("function_plotting_theme.R"))
 
 This script exports: 
 
-+ the subplots for Figure 3 (a and b)
-+ the subplots for Figure 2 (c and d)
++ the subplots for Fig. 3 (a and b)
++ Fig. 2b
 + Fig S3
 + Fig S4
 + the subplots for Figure S9
 
-See script `Multipanel_Fig_2.Rmd` for the assemblage and export of figure 2, 3 and S9. 
+See script `3_plot_Fig_2.Rmd` for the assemblage and export of figure 2, 3 and S9. 
 
 make folder to export figures
 ```{r}
@@ -322,21 +320,21 @@ ggsave(file = here("figures", "Fig_S4.pdf"),
 plots
 ```
 
-##BEF metrics
+##Transgressive overyielding
 
-We calculate the slope between richness and functioning for all combinations of environments. 
+We calculate the transgressive overyielding for all combinations of environments. 
 
 + for all scales (1:5 environments)
 + for all possible unique combinations of environments 
 
-We calculate the functioning of a given species mixture in that combination of environments at that scale as the average functioning of that species mixture in the single environments. 
+We calculate the functioning of a given species mixture (or monoculture) in that combination of environments at that scale as the average functioning of that species mixture in the single environments. 
 
-For each scale and environment combination we then calculate the following metrics:
+**Transgressive overyielding** is calculated as:
 
-+ the **slope of a power fit** to the richness ~ functioning relationship
-+ **transgressive overyielding**: highest mixture value / maximum monoculture value
++ highest mixture value / maximum monoculture value
 
-in a first step we calculate the mean functioning for each strain and strain combinations for all possible combinations of environments. 
+
+In a first step we calculate the mean functioning for each strain and strain combinations for all possible combinations of environments. 
 
 As there is no sensible way how the replicated measurements should be matched across environments, we first calculate the average for each strain combination in each environment. 
 
@@ -416,49 +414,14 @@ env_values %>%
 ```
 
 
-### power-fit statistics
-```{r}
-
-env_values %>%
-  group_by(envnum) %>% 
-  nest() %>% 
-  mutate(log_fit = map(data, ~lm(log(functioning) ~ log(richness), data = .))) %>% 
-  mutate(log_fit = map(log_fit, tidy)) %>% 
-  unnest(log_fit) %>% 
-  select(-std.error, -statistic, -p.value) %>% 
-  spread(term, estimate) %>% 
-  mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., 
-                                    start = list(a = exp(`(Intercept)`) , b = `log(richness)`)))) %>%
-  mutate(power_ci = map(power_fit, function(x) confint2(x, "b", level = 0.95))) %>% 
-  mutate(power_ci = map(power_ci, function(x) tibble(level = colnames(x), CI = x[c(1:2)]))) %>%
-  mutate(power_fit = map(power_fit, tidy)) %>% 
-  unnest(cols = power_fit) %>% 
-  filter(term == "b") %>% 
-  unnest(cols = power_ci) %>% 
-  dplyr::select(envnum, estimate, p.value, level, CI) %>% 
-  mutate_if(is.numeric, round, digits = 3)
-
-
-```
-
-Now we calculate the remaining BEF metrics (transgressive overyielding and slopes)
+Now we calculate transgressive overyielding:
 
 ```{r}
 
 env_metrics <- 
   env_values %>% 
   group_by(env_comb, envnum) %>%
-  nest() %>% 
-  #loglinear fit to find start parameters for power fit
-  mutate(log_fit = map(data, ~lm(log(functioning) ~ log(richness), data = .))) %>% 
-  mutate(log_fit = map(log_fit, tidy)) %>% 
-  unnest(log_fit) %>% 
-  select(-std.error, -statistic, -p.value) %>% 
-  spread(term, estimate) %>% 
-  #non-linear fit to the production ~ richness slope. Extracting the exponent parameter b  
-  mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., 
-                                    start = list(a = exp(`(Intercept)`) , b = `log(richness)`)))) %>%  
-  mutate(power_fit = map_dbl(power_fit, function(x) coef(x)[2])) %>% 
+  nest() %>%
   #transgressive overyielding (mean highest mixture / max monoculture)
   mutate(transgressive = map_dbl(data, function(x) {
     x %>% 
@@ -474,71 +437,11 @@ env_metrics <-
 ```
 
 
-+ intermediate plot to visualize the results together
-```{r}
-d <- tibble(linear_fit = c(-0.2,0.2),
-            power_fit = c(-0.2,0.2),
-            transgressive = c(-50, 50)) %>% 
-  gather(metric, value)
-
-env_metrics %>% 
-  select(-data, -`(Intercept)`, -`log(richness)`) %>% 
-  gather(metric, value, -envnum, -env_comb) %>% 
-  ggplot(aes(x = envnum, y = value))+
-  geom_point(position = position_jitter(width = 0.1), fill = "dodgerblue3", size = 2, shape = 21, alpha = 0.7)+
-  facet_wrap(~metric, scales = "free_y", ncol = 2)+
-  stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
-  theme_bw()+
-  labs(x = "number of environments")
-```
-### Fig 2c - power-fits by scale
-
-```{r}
-envnum <- max(env_metrics$envnum)
-
-Fig_2_c <- 
-env_metrics %>% 
-  select(-data) %>% 
-  gather(metric, value, -envnum, -env_comb) %>%
-  filter(metric == "power_fit") %>% 
-  ggplot(aes(x = envnum, y = value))+ #colour = as.factor(envnum)))+
-  geom_point(size = 2, alpha = 1, position = position_jitter(width = 0.01), 
-             colour = viridis(n = 1, alpha = 1, begin = 0.5, end = 0.5, option = "C"))+
-  stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred", linetype = "dashed")+
-  theme_classic()+
-  labs(y = "beta slope", x = "scale")+
-  theme(legend.position = "none",
-        axis.ticks.length=unit(-0.25, "cm"),
-        axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
-        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))+
-  NULL
-
-
-save("Fig_2_c", file = here("figures", "Fig_2_c.RData"))
- 
-Fig_2_c
-
-
-
-```
-
-### beta statistics
-```{r}
-env_metrics %>% 
-  select(-data) %>% 
-  gather(metric, value, -envnum, -env_comb) %>%
-  filter(metric == "power_fit") %>% 
-  lm(value ~ envnum, data = .) %>% 
-  tidy %>% 
-  mutate_if(is.numeric, round, 3)
-
-```
-
 ### Fig 2d / S9 - transgressive overyielding
 ```{r}
-Fig_2_d <- 
+Fig_2b <- 
 env_metrics %>% 
-  select(-data, -`(Intercept)`, -`log(richness)`) %>% 
+  select(-data) %>% 
   gather(metric, value, -envnum, -env_comb) %>% 
   filter(metric == "transgressive") %>% 
   ggplot(aes(x = envnum, y = value)) +
@@ -551,18 +454,18 @@ env_metrics %>%
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
         axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))+
-  #scale_y_continuous(limits = c(0, 0.8))+
+  scale_y_continuous(limits = c(0, 1))+
   NULL
 
 if(!Sens_analysis){
-save("Fig_2_d", file = here("figures", "Fig_2_d.RData"))
+save("Fig_2b", file = here("figures", "Fig_2b.RData"))
 }
 
 if(Sens_analysis){
-save("Fig_2_d", file = here("figures", "Fig_S_9.RData"))
+save("Fig_2b", file = here("figures", "Fig_S9.RData"))
 }
   
-Fig_2_d
+Fig_2b
 ```
 
 ### transgressive overyielding - statistics
