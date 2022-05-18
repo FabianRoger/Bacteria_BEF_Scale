@@ -398,7 +398,7 @@ Results <-
 
 ##Fig 2 - slopes and histograms 
 
-###Fig 2b: Transgressive overyielding
+###Fig 2a: Transgressive overyielding
 ```{r}
 
 # calculate the median slope and the 90% percentiles
@@ -449,7 +449,7 @@ save("Fig_2a", file = here("figures", "Fig_2a.RData"))
 Fig_2a
 ```
 
-##Fig 2b inset
+##Fig 2ai inset
 ```{r}
 
 quantile_res <- 
@@ -458,7 +458,7 @@ Results %>%
   quantile(probs = c(0.025, 0.5, 0.975))
 
 Fig_2a_i <- 
-ggplot(Results_pred, aes(x = slope))+
+ggplot(Results, aes(x = slope))+
   geom_histogram(binwidth = 0.006, fill = "grey")+
   geom_vline(xintercept = 0, linetype = "dashed")+
   annotate(geom = "point", x = quantile_res[2], y = 6)+
