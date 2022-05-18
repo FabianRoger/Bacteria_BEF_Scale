@@ -5,49 +5,54 @@ This repository contains the code for the simulations and analysis for the artic
 
 preliminary citation: 
 
-> The biodiversity-function relationship is invariant to changes in spatial scale but transgressive overyielding is not
+> Scale and heterogeneity increase transgressive overyielding in biodiversity-ecosystem function experiments
 Lars Gamfeldt, Fabian Roger, James Hagan, Martin Palm, Jonas Warringer, Anne Farewell
 
+The analysis has three components: Data simulation, Experimental validation and Meta-analysis.
 
-To reproduce the analysis for the simulations and the bacteria microcosm experiment, download the repository and execute the scripts:
+To reproduce the analysis for the data simulation and Fig. S6, run the script called:
 
-+ Simulations.Rmd
-+ Analysis.Rmd
-+ Multipanel_Fig_2.Rmd
++ 1_Data_simulation.Rmd
 
-You must run the script `Analysis.Rmd` twice, once with `Sens_analysis = FALSE` and once with `Sens_analysis = TRUE` (Line 104), to produce the figures in the main text and the supplementary figures. 
+To reproduce the analysis for the experimental validation section, run the script called:
 
-The repository contains two further scripts: 
++ 2c_Experiment_analysis.nb.Rmd
 
-+ Join_and_export_raw_data.Rmd
-+ exploring data BSL2_6_7_ATCC_ABs_absolute.R
+You must run the script `2c_Experiment_analysis.nb.Rmd` twice, once with `Sens_analysis = FALSE` and once with `Sens_analysis = TRUE`, to produce the figures in the main text and the supplementary figures. Running this script will also produce Fig. S3 and S4.
 
+In addition, there are two other scripts:
+
++ 2a_Join_and_export_raw_data.Rmd
++ 2b_Exploring_data_BSL2_6_7_ATCC_ABs_absolute.R
 
 These scripts cannot be run as the necessary data are not provided. The first script documents how the raw data files from the OD reader in the experiment have been joined. The joined data are uploaded to figshare and downloaded in the Analysis.Rmd script. 
 
 The second script documents how the strains have been selected to maximize variance in growth performance across environments. The script is for internal documentation. These data are not public. 
 
-To reproduce the analysis for the meta-analysis, download the repository and execute the script:
+One the scripts above have been run, you can now reproduce Fig. 2, Fig. 3 and Fig. S7 using the script:
 
-+ meta_analysis_script.R
++ 3_Plot_Fig_2.Rmd
+
+To reproduce the analysis for the meta-analysis, start with the following script:
+
++ 4a_Meta_analysis_data_assessment.R
+
+This script reproduces the statistics regarding how many publications were searched, included etc. that are reported in the text.
+
+To reproduce the meta-analysis results, run the following script:
+
++ 4b_Meta_analysis.R
 
 This script reproduces all figures and tables associated with the meta-analysis from the raw data files, namely:
 
 + Fig. 4
-+ Fig. 5
 + Fig. S5
-+ Fig. S6
-+ Table S2
-+ Table S3
-+ Table S4
 
 The script also reproduces additional statistics and values reported only in text.
 
-In addition, to reproduce the statistics regarding how many publications were searched, included etc. that are reported in the text, download and execute the following script:
+In addition, 
 
-+ meta_analysis_data_assessment_script.R
-
-All data are downloaded directly within the scripts from figshare.com. The two datasets and their associated meta-data can be found at: https://ndownloader.figshare.com/files/22918043
+All data for the meta-analysis are downloaded directly within the scripts from figshare.com. The two datasets and their associated meta-data can be found at: https://ndownloader.figshare.com/files/22918043
 
 
 
