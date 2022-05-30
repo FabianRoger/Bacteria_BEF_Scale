@@ -1,6 +1,7 @@
 ---
 title: "Join and export data"
-output: html_notebook
+output:
+html_notebook: default
 ---
 
 In this script I join and export the raw data from the experiments. 

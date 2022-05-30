@@ -1,6 +1,7 @@
 ---
-title: "script to make multipanel figure 2, S3, S4"
-output: html_notebook
+title: "script to make multipanel figure 2, 3, S3, S4"
+output:
+html_notebook: default
 ---
 
 ```{r}
@@ -118,7 +119,7 @@ ggsave(plot = Fig3, filename = here("figures", "Fig_3.pdf"),
 ```
 
 
-#Figure S8
+#Figure S7
 
 note that to produce this figure you must run the code in Analysis.nb.Rmd both with and without the sensitivity analysis
 

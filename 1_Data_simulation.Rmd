@@ -1,6 +1,7 @@
 ---
 title: "Bacterial EF across Scale - Simulations"
-output: html_notebook
+output:
+html_notebook: default
 ---
 
 ```{r, message=FALSE}

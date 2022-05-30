@@ -32,7 +32,7 @@ This script exports:
 + Fig S4
 + the subplots for Figure S7
 
-See script `3_plot_Fig_2.Rmd` for the assemblage and export of figure 2, 3 and S9. 
+See script `3_plot_Fig_2.Rmd` for the assemblage and export of figure 2, 3 and S7. 
 
 make folder to export figures
 ```{r}
@@ -111,8 +111,8 @@ To run the code and produce Fig S4 and S9, set `Sens_analysis = TRUE`
 Note that all the code will be executed when `Sens_analysis = TRUE` but the other figures will not be exported. 
 ```{r}
 
-# Sens_analysis = FALSE
-Sens_analysis = TRUE
+Sens_analysis = FALSE
+# Sens_analysis = TRUE
 
 if(Sens_analysis){
   
@@ -399,7 +399,7 @@ env_values %>%
   ggplot(aes(x = richness, y = functioning/1e8, colour = as.factor(envnum)))+
   geom_point(aes(group = env_comb), size = 1, alpha = 1, position = position_dodge(width = 0.7))+
   geom_line(aes(y = .fitted/1e8, group = env_comb), position = position_dodge(width = 0.7))+
-  scale_color_manual(values = viridis(6)[1:5], name = "Scale")+
+  # scale_color_manual(values = viridis(6)[1:5], name = "Scale")+
   theme_meta()+
   facet_wrap(~envnum)+
   labs(y = paste("Production x", expression(1e8)), x = "Species richness")+
@@ -433,6 +433,14 @@ env_metrics <-
       {.[.$richness == specnum,]$functioning /
           .[.$richness == 1,]$functioning}
     })) 
+
+```
+
+```{r}
+
+env_metrics %>%
+  group_by(envnum) %>%
+  summarise(m.transgressive = mean(transgressive))
 
 ```
 
