@@ -421,18 +421,26 @@ Now we calculate transgressive overyielding:
 env_metrics <- 
   env_values %>% 
   group_by(env_comb, envnum) %>%
+  #filter(env_comb == "Tet", envnum == 1) %>% 
   nest() %>%
   #transgressive overyielding (mean highest mixture / max monoculture)
-  mutate(transgressive = map_dbl(data, function(x) {
-    x %>% 
+  mutate(transgressive = map(data, function(x) {
+   x %>% 
       group_by(gene) %>% 
       filter(richness %in% c(1, specnum)) %>% 
-      summarise(functioning = mean(functioning, na.rm = T), richness = unique(richness), .groups = "drop") %>% 
+      summarise(functioning = mean(functioning, na.rm = T), 
+                richness = unique(richness), .groups = "drop") %>% 
       group_by(richness) %>% 
-      summarise(functioning = max(functioning, na.rm = T), .groups = "drop") %>% 
-      {.[.$richness == specnum,]$functioning /
-          .[.$richness == 1,]$functioning}
-    })) 
+      summarise(functioning = max(functioning, na.rm = T)) %>% 
+  nest(data=everything())
+    })) %>% 
+  select(-data) %>% 
+  unnest(transgressive) %>% 
+  unnest(data) %>% 
+  mutate(richness = case_when(richness == 1 ~ "max_mono",
+                              TRUE ~ "mix")) %>% 
+  pivot_wider(names_from = "richness", values_from = "functioning") %>% 
+  mutate(transgressive = mix / max_mono)
 
 ```
 
@@ -449,7 +457,7 @@ env_metrics %>%
 ```{r}
 Fig_2b <- 
 env_metrics %>% 
-  select(-data) %>% 
+ # select(-data) %>% 
   gather(metric, value, -envnum, -env_comb) %>% 
   filter(metric == "transgressive") %>% 
   ggplot(aes(x = envnum, y = value)) +
@@ -476,10 +484,48 @@ save("Fig_2b", file = here("figures", "Fig_S7.RData"))
 Fig_2b
 ```
 
+```{r}
+#Fig_2b <- 
+env_metrics %>% 
+  ungroup() %>% 
+  #bring to common scale
+  mutate(mix = mix/max(max_mono),
+      max_mono = max_mono / max(max_mono)
+         ) %>% 
+ # select(-data) %>% 
+  gather(metric, value, -envnum, -env_comb) %>% 
+ # filter(metric == "transgressive") %>% 
+  ggplot(aes(x = envnum, y = value, colour = metric)) +
+  geom_point( size = 2, alpha = 1, position = position_jitter(width =  0.1) )+
+  stat_smooth(method = "lm", se = T, size = 0.5)+
+  geom_hline(yintercept = 1, colour = "black", linetype = "dashed") +
+  facet_wrap(~metric, nrow = 1)+
+  theme_meta()+
+  labs(y = "Transgressive overyielding", x = "Scale")+
+  theme(legend.position = "bottom",
+        axis.ticks.length=unit(-0.25, "cm"),
+        axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
+        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))+
+ # scale_y_continuous(limits = c(0, 1))+
+  scale_colour_viridis_d()+
+  NULL
+
+if(!Sens_analysis){
+save("Fig_2b", file = here("figures", "Fig_2b.RData"))
+}
+
+if(Sens_analysis){
+save("Fig_2b", file = here("figures", "Fig_S7.RData"))
+}
+  
+Fig_2b
+```
+
+
 ### transgressive overyielding - statistics
 ```{r}
 env_metrics %>% 
-  select(-data) %>% 
+ # select(-data) %>% 
   gather(metric, value, -envnum, -env_comb) %>%
   filter(metric == "transgressive") %>% 
   lm(value ~ envnum, data = .) %>% 

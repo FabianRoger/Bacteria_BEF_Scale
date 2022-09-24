@@ -13,6 +13,7 @@ library(ggbeeswarm)
 library(broom)
 library(here)
 library(pbapply)
+library(viridis)
 source(here("function_plotting_theme.R"))
 ```
 
@@ -219,9 +220,9 @@ env_metrics <-
   env_values %>% 
   group_by(env_comb, envnum) %>%
   nest() %>%
-  mutate(transgressive = map_dbl(data, function(x) {
-    x[x$richness == specnum,]$functioning / 
-      max(x[x$richness == 1,]$functioning)})) 
+  mutate(mix = map_dbl(data, function(x) {x[x$richness == specnum,]$functioning}),
+         max_mono = map_dbl(data, function(x) {max(x[x$richness == 1,]$functioning)}),
+         transgressive = mix / max_mono)
 ```
 
 ### plot power-fits 
@@ -273,6 +274,27 @@ env_metrics %>%
   NULL
 
 ```
+
+```{r}
+
+env_metrics %>% 
+  select(-data) %>% 
+  gather(metric, value, -envnum, -env_comb) %>% 
+  #filter(metric == "transgressive") %>% 
+  ggplot(aes(x = envnum, y = value, colour = metric))+
+  geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1))+
+  stat_smooth(method = "lm", se = F, size = 0.5)+
+  theme_classic()+
+  labs(y = "transgressive overyielding", x = "scale")+
+  theme(axis.ticks.length=unit(-0.25, "cm"),
+        axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
+        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )+
+  scale_y_continuous(limits = c(0, 1.1))+
+  scale_colour_viridis_d()
+  NULL
+
+```
+
 
 # multiple draws from uniform
 
@@ -368,9 +390,9 @@ env_metrics <-
   env_values %>% 
   group_by(env_comb, envnum) %>%
   nest() %>% 
-  mutate(transgressive = map_dbl(data, function(x) {
-    x[x$richness == specnum,]$functioning / 
-      max(x[x$richness == 1,]$functioning)})) 
+  mutate(mix = map_dbl(data, function(x) {x[x$richness == specnum,]$functioning}),
+         max_mono = map_dbl(data, function(x) {max(x[x$richness == 1,]$functioning)}),
+         transgressive = mix / max_mono)
 
 transgressive <- 
 env_metrics %>% 
