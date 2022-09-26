@@ -344,7 +344,8 @@ As there is no sensible way how the replicated measurements should be matched ac
 
 Data_wide <- 
   Data %>% 
-  select(Richness, gene, Antibiotic, GrowthYield) %>% 
+  select(Richness, gene, Antibiotic, GrowthYield) %>%
+  #filter(Richness == 1 & gene == "a") %>% 
   group_by(Richness, gene, Antibiotic) %>% 
   summarise(GrowthYield = mean(GrowthYield, na.rm = T)) %>% 
   spread(Antibiotic, GrowthYield)
@@ -368,8 +369,8 @@ lapply(ab_comb, function(x) { #for all levels of environmental richness (scale: 
        envnum = length(y), # what scale
        richness = Data_wide$Richness, 
        gene = Data_wide$gene,
-       #functioning = rowMeans(Data_wide[,y]), #mean of functioning across environments
-       functioning = rowSums(Data_wide[,y]) #sum of functioning across environments
+       functioning = rowMeans(Data_wide[,y]) #mean of functioning across environments
+       #functioning = rowSums(Data_wide[,y]) #sum of functioning across environments
                      )
   })
   })
@@ -520,7 +521,42 @@ save("Fig_2b", file = here("figures", "Fig_S7.RData"))
   
 Fig_2b
 ```
+```{r}
+#Fig_2b <- 
+env_metrics %>% 
+  ungroup() %>% 
+  #bring to common scale
+  mutate(mix = mix/max(max_mono),
+      max_mono = max_mono / max(max_mono)
+         ) %>% 
+ # select(-data) %>% 
+  gather(metric, value, -envnum, -env_comb) %>% 
+  filter(metric != "transgressive") %>% 
+  ggplot(aes(x = metric, y = value)) +
+  geom_point( size = 2, alpha = 1)+
+ # stat_smooth(method = "lm", se = T, size = 0.5)+
+  geom_hline(yintercept = 1, colour = "black", linetype = "dashed") +
+  geom_line(aes(group = env_comb))+
+  facet_wrap(~envnum, nrow = 1)+
+  theme_meta()+
+  labs(y = "Transgressive overyielding", x = "Scale")+
+  theme(legend.position = "bottom",
+        axis.ticks.length=unit(-0.25, "cm"),
+        axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
+        axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))+
+ # scale_y_continuous(limits = c(0, 1))+
+  NULL
 
+if(!Sens_analysis){
+save("Fig_2b", file = here("figures", "Fig_2b.RData"))
+}
+
+if(Sens_analysis){
+save("Fig_2b", file = here("figures", "Fig_S7.RData"))
+}
+  
+Fig_2b
+```
 
 ### transgressive overyielding - statistics
 ```{r}
