@@ -290,7 +290,7 @@ env_metrics %>%
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
         axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )+
   scale_y_continuous(limits = c(0, 1.1))+
-  scale_colour_viridis_d()
+  scale_color_viridis_d(option = "C", end = 0.8)
   NULL
 
 ```
@@ -361,7 +361,7 @@ return(plot_values_df)
 ### Transgressive overyielding
 ```{r}
 
-env_metrics_list <- 
+env_metrics_list_oy <- 
   pblapply(plot_values_df_list, function(PV) {
     
     plot_values_wide <-
@@ -393,29 +393,34 @@ env_metrics <-
   mutate(mix = map_dbl(data, function(x) {x[x$richness == specnum,]$functioning}),
          max_mono = map_dbl(data, function(x) {max(x[x$richness == 1,]$functioning)}),
          transgressive = mix / max_mono)
+})
 
-transgressive <- 
-env_metrics %>% 
+  
+env_metrics_list <- 
+lapply(env_metrics_list_oy, function(x){
+  x %>% 
   select(-data) %>% 
   gather(metric, value, -envnum, -env_comb) %>%
-  filter(metric == "transgressive") %>% 
-  lm(value ~ envnum, data = .)
-
-
-return(tibble(transgressive = list(transgressive)))
-}
-)
+  ungroup() %>% 
+  nest(data = -metric) %>% 
+  mutate(lm = map(data, ~lm(value ~ envnum, data = .x))) %>% 
+  select(-data)
+})
 
 
 ```
 
 ```{r}
+
 Results <- 
  bind_rows(env_metrics_list) %>% 
-  gather(metric, value) %>% 
-  mutate(slope = map_dbl(map(.$value, coef),"envnum")) %>% 
-  mutate(Intercept = map_dbl(map(.$value, coef),"(Intercept)")) %>% 
-  select(-value)
+  mutate(slope = map_dbl(map(.$lm, coef), "envnum")) %>% 
+  mutate(Intercept = map_dbl(map(.$lm, coef),"(Intercept)")) %>% 
+  select(-lm) %>% 
+   mutate(metric = factor(metric, 
+                         levels = c("mix", "max_mono", "transgressive"),
+                         labels = c("average\nmixture", "highest\nmonoculture", 
+                                    "transgressive\noveryielding")))
 
 ```
 
@@ -423,39 +428,52 @@ Results <-
 
 ###Fig 2a: Transgressive overyielding
 ```{r}
-
 # calculate the median slope and the 90% percentiles
-median(Results$slope)
-quantile(Results$slope, c(0.05, 0.95))
+Results %>% 
+  group_by(metric) %>% 
+  summarise(median = median(slope),
+            q05 = quantile(slope, 0.05),
+            q95 = quantile(slope, 0.95)) %>% 
+  mutate(across(is.numeric, round, 3))
+   
+```
 
 
+```{r}
 # predict new data
 env_pred = seq(1,5,0.1)
 
-newdata = tibble(rep = rep(1:nrow(Results), each = length(env_pred)),
-                 env_pred = rep(env_pred, nrow(Results)))
+newdata = tibble(rep = rep(1:(nrow(Results)/3), each = length(env_pred)),
+                 env_pred = rep(env_pred, (nrow(Results)/3)))
 
 Results_pred <- 
   Results %>% 
+  group_by(metric) %>% 
   mutate(rep = 1:n()) %>% 
   left_join(newdata) %>% 
   mutate(predict = slope*env_pred+Intercept)
 
 med_slope <- 
 Results %>% 
+  group_by(metric) %>% 
   mutate(rep = 1:n()) %>% 
   slice(1:999) %>% #has to be odd number to find exact media
   mutate(slope_q = 
   case_when(abs(slope - median(slope)) == min(abs(slope - median(slope))) ~ "median",
             abs(slope - quantile(slope, 0.025)) == min( abs(slope - quantile(slope, 0.025))) ~ "low_q",
             abs(slope - quantile(slope, 0.975)) == min( abs(slope - quantile(slope, 0.975))) ~ "high_q")) %>% 
-  filter(!is.na(slope_q))
+  filter(!is.na(slope_q)) %>% 
+  group_by(metric, slope_q) %>% 
+  dplyr::slice(1)
 
 
 Fig_2a <- 
-ggplot(Results_pred, aes(x = env_pred, y = predict, group = rep))+
-  geom_line(size = 0.5, alpha = 0.1, colour = "grey")+
-  geom_line(data = Results_pred %>% filter(rep == pull(filter(med_slope, slope_q == "median"), rep)), colour = "black", size = 1)+
+ggplot(Results_pred, aes(x = env_pred, y = predict, group = paste(rep, metric), colour = metric))+
+ # geom_line(size = 0.5, alpha = 0.05)+
+  geom_line(data = Results_pred %>% 
+              left_join(med_slope) %>% 
+              filter(slope_q == "median"), size = 1)+
+ # facet_wrap(~metric)+
   geom_hline(yintercept = 1, colour = "black", linetype = "dashed") +
   theme_meta()+
   labs(y = "Transgressive overyielding", x = "Scale")+
@@ -463,7 +481,8 @@ ggplot(Results_pred, aes(x = env_pred, y = predict, group = rep))+
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
         axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )+
-  scale_y_continuous(limits = c(-0.2, NA))
+  scale_y_continuous(limits = c(-0.2, NA))+
+  scale_color_viridis_d(option = "C", end = 0.8)
 
 
 save("Fig_2a", file = here("figures", "Fig_2a.RData"))
@@ -475,28 +494,34 @@ Fig_2a
 ##Fig 2ai inset
 ```{r}
 
-quantile_res <- 
-Results %>% 
-  pull(slope) %>% 
-  quantile(probs = c(0.025, 0.5, 0.975))
+quantile_res <- med_slope %>%
+                   filter(slope_q != "median") %>% 
+                   select(-Intercept, -rep) %>% 
+                   pivot_wider(names_from = slope_q, values_from = slope)
 
 Fig_2a_i <- 
-ggplot(Results, aes(x = slope))+
-  geom_histogram(binwidth = 0.006, fill = "grey")+
+ggplot(Results, aes(fill = metric, colour = metric))+
+  geom_density(aes(x = slope, ..scaled..))+
   geom_vline(xintercept = 0, linetype = "dashed")+
-  annotate(geom = "point", x = quantile_res[2], y = 6)+
-  annotate(geom = "errorbarh", 
-           xmax = quantile_res[1], 
-           xmin = quantile_res[3],
-           y = 6)+
+  geom_point(data = med_slope %>%  filter(slope_q == "median"), 
+           aes(x = slope, y = 0.1), colour = "white")+
+  geom_errorbarh(data = quantile_res,
+                 aes(xmax = high_q, xmin = low_q, y=0.1), colour = "white", height = 0)+ 
+  facet_wrap(~metric)+
   theme_meta()+
   theme(legend.position = "none", 
         title = element_text(size = 10))+
   labs(y = paste("N draws (total ", N, ")", sep = ""),
        title = "Change in transgressive overyielding with scale",
        x = "Transgressive overyielding ~ scale (est.)")+
-  scale_x_continuous(limits = c(-0.07, 0.157)) +
-  theme(axis.text = element_text(size = 5))
+ # scale_x_continuous(limits = c(-0.07, 0.157)) +
+  theme(text = element_text(size = 8),
+        axis.text.x = element_text(size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 8))+
+  scale_fill_viridis_d(option = "C", end = 0.8)+
+  scale_color_viridis_d(option = "C", end = 0.8)
 
 
   save("Fig_2a_i", file = here("figures", "Fig_2a_i.RData"))
