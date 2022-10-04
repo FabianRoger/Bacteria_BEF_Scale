@@ -36,17 +36,17 @@ if(! dir.exists(here("figures"))){
 
 #set up simulations
 
-+ We want to simulate 5 strains of Bacteria, growing in 5 different environments. 
++ We want to simulate 5 strains of Bacteria, growing in 5 different habitats. 
 + Each Strain differs in its ability to grow on each antibiotic.
 + We grow the bacteria in every possible combination (monocultures and all possible species mixtures)
-+ We grow them on every possible combination of environments
-+ We measure EF at different scales going from 1 to 5 environments  
++ We grow them on every possible combination of habitats
++ We measure EF at different scales going from 1 to 5 habitats  
 
-define number of species and environments
+define number of species and habitats
 ```{r}
 
 specnum <- 5
-envnum <- 5
+habnum <- 5
  
 ```
 
@@ -62,12 +62,12 @@ names(spec_comb) <- paste("richness", c(1:specnum))
 
 ## environments
 
-We create 5 environments (for `envnum = 5`) named Environment_1 to Environment_5 and get every possible combination of the five environments for all 1,2,3,4 and 5 environment combinations (corresponding to the different scales)
+We create 5 habitats (for `habnum = 5`) named Habitat_1 to Habitat_5 and get every possible combination of the five habitats for all 1, 2, 3, 4 and 5 habitat combinations (corresponding to the different scales)
 
 ```{r}
-env <- paste("Environment_", c(1:envnum), sep = "")
-env_comb <- sapply(c(1:envnum), function(x) combn(env, x)) 
-names(env_comb) <- paste("Heterogeneity", c(1:envnum))
+hab <- paste("Habitat_", c(1:envnum), sep = "")
+hab_comb <- sapply(c(1:habnum), function(x) combn(hab, x)) 
+names(hab_comb) <- paste("Heterogeneity", c(1:habnum))
 ```
 
 number of combinations
@@ -75,8 +75,8 @@ number of combinations
 ```{r}
 tibble(spec_combs = 
          sum(choose(specnum,1:specnum)),
-       env_combs = 
-         sum(choose(envnum,1:envnum)))
+       hab_combs = 
+         sum(choose(habnum,1:habnum)))
 ```
 
 # step-by-step
@@ -85,16 +85,16 @@ In the following we draw a single draw of fitness values for each strain and dev
 
 ### fitness values
 
-We assign each strain a fitness value for each environment. The values are drawn from a uniform distribution (0,1) for each strain and each environment. 
+We assign each strain a fitness value for each habitat. The values are drawn from a uniform distribution (0,1) for each strain and each environment. 
 
 ```{r}
 
 set.seed(1346)
 
 Traits <- matrix(
-  nrow = length(env),
+  nrow = length(hab),
   ncol = length(spec),
-  dimnames = list(env, spec))
+  dimnames = list(hab, spec))
 
 
 Traits[1:nrow(Traits), 1:ncol(Traits)] <-
@@ -105,18 +105,18 @@ Traits
 
 ### calculate plot values
 
-here we calculate the outcome (biomass / 'functioning') of every species combination in each environment. We calculate the mixture performance as:
+here we calculate the outcome (biomass / 'functioning') of every species combination in each habitat. We calculate the mixture performance as:
 
-**Weighted mean**: The mixture value equals the mean performance of all species, weighted by their relative performance in the environment
+**Weighted mean**: The mixture value equals the mean performance of all species, weighted by their relative performance in the habitat
 
 *what the code does*
 
-for each environment `sapply(env, ...` it cycles through all richness levels `lapply(spec_comb, ...)` and for each richness level it cycles through all species combinations `apply(..., 2, )`.
-Then it calculates the mixture performance of that species combination of that richness level in that environment given the species performance stored in `Traits` 
+for each habitat `sapply(env, ...` it cycles through all richness levels `lapply(spec_comb, ...)` and for each richness level it cycles through all species combinations `apply(..., 2, )`.
+Then it calculates the mixture performance of that species combination of that richness level in that habitat given the species performance stored in `Traits` 
 
 ```{r}
 
-plot_values <- sapply(env, #for each environment
+plot_values <- sapply(hab, #for each environment
                       function(x) {
                         lapply(spec_comb, #for each richness level
                                function(y) {
@@ -131,12 +131,12 @@ plot_values <- sapply(env, #for each environment
 
 plot_values_df <- 
   tibble(
-    richness = rep( rep(1:specnum, unlist(lapply(spec_comb, ncol))), envnum),
+    richness = rep( rep(1:specnum, unlist(lapply(spec_comb, ncol))), habnum),
     spec_comb = rep(lapply(spec_comb, 
                            function(x) apply(x, 2, function(y) 
                              paste(y, collapse = " "))) %>% unlist(),
-                    envnum),
-    environment = rep(env, each = sum(choose(specnum,1:specnum))),
+                    habnum),
+    habitat = rep(hab, each = sum(choose(specnum,1:specnum))),
     functioning = unlist(plot_values)
     )
 
@@ -151,7 +151,7 @@ plot_values_df <-
 
 ### plot plot-values
 
-Here we plot the single species and mixture functioning of each species combination in each environment. The Mixture performance is calculated as the weighted mean of the monoculture performances. 
+Here we plot the single species and mixture functioning of each species combination in each habitat. The Mixture performance is calculated as the weighted mean of the monoculture performances. 
 
 We show a power-fit (with 2*se CI) and a linear fit, both showing the positive richness ~ functioning relationship (that follows inherently from the way we calculate the mixture values)
 
@@ -159,7 +159,7 @@ We show a power-fit (with 2*se CI) and a linear fit, both showing the positive r
 
 plot_values_df %>% 
   na.omit() %>% 
-  group_by(environment) %>%
+  group_by(habitat) %>%
   nest() %>% 
   mutate(power_fit = map(data, ~lm(log(functioning) ~ log(richness), data = .))) %>% 
   mutate(power_fit = map(power_fit, augment, se_fit = TRUE)) %>% 
@@ -173,20 +173,20 @@ plot_values_df %>%
   geom_ribbon(aes(x = richness, 
                   ymin = exp(.fitted - 2*.se.fit), 
                   ymax = exp(.fitted + 2*.se.fit),
-                  group = environment), fill = "grey", alpha = 0.2)+
-  facet_wrap(~environment, scales = "free_y")+
+                  group = habitat), fill = "grey", alpha = 0.2)+
+  facet_wrap(~habitat, scales = "free_y")+
   theme_bw()
 
 ```
 
 ## Transgressive overyielding
 
-We calculate the transgressive overyielding for all combinations of environments. 
+We calculate the transgressive overyielding for all combinations of habitats. 
 
-+ for all scales (1:5 environments)
-+ for all possible unique combinations of environments 
++ for all levels of habitat heterogeneity (1:5 habitats)
++ for all possible unique combinations of habitats
 
-We calculate the functioning of a given species mixture (or monoculture) in that combination of environments at that scale as the average functioning of that species mixture in the single environments. 
+We calculate the functioning of a given species mixture (or monoculture) in that combination of habitats at that level of habitat heterogeneity as the average functioning of that species mixture in the single habitats. 
 
 **Transgressive overyielding** is calculated as:
 
@@ -197,28 +197,28 @@ We calculate the functioning of a given species mixture (or monoculture) in that
 
 plot_values_wide <- 
 plot_values_df %>% 
-  spread(environment, functioning)
+  spread(habitat, functioning)
 
 #calculate average functioning for each env combination at each scale and store results in dataframe
-env_values <- 
-lapply(env_comb, function(x) { #for all scales (1:5)
+hab_values <- 
+lapply(hab_comb, function(x) { #for all scales (1:5)
   apply(x, 2, function(y) { #for all environmental combinations
    
      df <- data.frame( #average functioning for this environment combination
-       env_comb = paste0(y, collapse = " "),
-       envnum = length(y),
+       hab_comb = paste0(y, collapse = " "),
+       habnum = length(y),
        richness = plot_values_wide$richness,
-       functioning = rowMeans(plot_values_wide[,y]) #mean of functioning across environments
+       functioning = rowMeans(plot_values_wide[,y]) #mean of functioning across habitats
                      )
   })
   })
 
-env_values <- bind_rows(unlist(env_values, recursive = FALSE))
+hab_values <- bind_rows(unlist(hab_values, recursive = FALSE))
 
 # calculate BEF metrics for each environment combination
-env_metrics <- 
-  env_values %>% 
-  group_by(env_comb, envnum) %>%
+hab_metrics <- 
+  hab_values %>% 
+  group_by(hab_comb, habnum) %>%
   nest() %>%
   mutate(mix = map_dbl(data, function(x) {x[x$richness == specnum,]$functioning}),
          max_mono = map_dbl(data, function(x) {max(x[x$richness == 1,]$functioning)}),
@@ -229,23 +229,23 @@ env_metrics <-
 
 ```{r}
 
-env_values %>%
-  group_by(env_comb, envnum) %>% 
+hab_values %>%
+  group_by(hab_comb, habnum) %>% 
   nest() %>% 
   mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., start = list(a = 1, b = 1)))) %>%
   #mutate(power_fit = map(data, ~nls(functioning ~ a*richness/(b+richness), data = ., start = list(a = 1, b = 1)))) %>%
   mutate(power_fit = map(power_fit, augment)) %>% 
   unnest(cols = power_fit) %>% 
-  ggplot(aes(x = richness, y = functioning, colour = as.factor(envnum)))+
-  geom_point(aes(group = env_comb), 
+  ggplot(aes(x = richness, y = functioning, colour = as.factor(habnum)))+
+  geom_point(aes(group = hab_comb), 
              size = 1, alpha = 1, 
               position = position_dodge(width = 0.7)
               )+
-  geom_line(aes(y = .fitted, group = env_comb),
+  geom_line(aes(y = .fitted, group = hab_comb),
             position = position_dodge(width = 0.7)
             )+
-  facet_wrap(~envnum)+
-  scale_color_manual(values = viridis(envnum+1)[1:envnum], name = "scale")+
+  facet_wrap(~habnum)+
+  scale_color_manual(values = viridis(habnum+1)[1:habnum], name = "scale")+
   theme_classic()+
   labs(y = "production", x = "species richness")+
   theme(legend.position = "none")
@@ -254,18 +254,18 @@ env_values %>%
 ```
 
 
-### plot transgressive overyielding by scale
+### plot transgressive overyielding by habitat heterogeneity
 ```{r}
 
-env_metrics %>% 
+hab_metrics %>% 
   select(-data) %>% 
-  gather(metric, value, -envnum, -env_comb) %>% 
+  gather(metric, value, -habnum, -hab_comb) %>% 
   filter(metric == "transgressive") %>% 
-  ggplot(aes(x = envnum, y = value))+
+  ggplot(aes(x = habnum, y = value))+
   geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1), colour = viridis(6)[3])+
   stat_smooth(method = "lm", se = F, size = 0.5, colour = "darkred")+
   theme_classic()+
-  labs(y = "transgressive overyielding", x = "scale")+
+  labs(y = "transgressive overyielding", x = "Habitat heterogeneity")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
@@ -277,15 +277,15 @@ env_metrics %>%
 
 ```{r}
 
-env_metrics %>% 
+hab_metrics %>% 
   select(-data) %>% 
-  gather(metric, value, -envnum, -env_comb) %>% 
+  gather(metric, value, -habnum, -hab_comb) %>% 
   #filter(metric == "transgressive") %>% 
-  ggplot(aes(x = envnum, y = value, colour = metric))+
+  ggplot(aes(x = habnum, y = value, colour = metric))+
   geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1))+
   stat_smooth(method = "lm", se = F, size = 0.5)+
   theme_classic()+
-  labs(y = "transgressive overyielding", x = "scale")+
+  labs(y = "transgressive overyielding", x = "Habitat heterogeneity")+
   theme(axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
         axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")) )+
@@ -303,9 +303,9 @@ In the above example with took a single draw for the trait values from the unifo
 ### fitness values
 ```{r}
 Traits <- matrix(
-  nrow = length(env),
+  nrow = length(hab),
   ncol = length(spec),
-  dimnames = list(env, spec))
+  dimnames = list(hab, spec))
 
 # take N random draws
 
@@ -328,7 +328,7 @@ return(Traits)})
 plot_values_df_list <- 
 pblapply(Trait_list, function(TM) {
 
-plot_values <- sapply(env, #for each environment
+plot_values <- sapply(hab, #for each environment
                       function(x) {
                         lapply(spec_comb, #for each richness level
                                function(y) {
@@ -344,12 +344,12 @@ plot_values <- sapply(env, #for each environment
 
 plot_values_df <- 
   tibble(
-    richness = rep( rep(1:specnum, unlist(lapply(spec_comb, ncol))), envnum),
+    richness = rep( rep(1:specnum, unlist(lapply(spec_comb, ncol))), habnum),
     spec_comb = rep(lapply(spec_comb, 
                            function(x) apply(x, 2, function(y) 
                              paste(y, collapse = " "))) %>% unlist(),
-                    envnum),
-    environment = rep(env, each = sum(choose(specnum,1:specnum))),
+                    habnum),
+    habitat = rep(hab, each = sum(choose(specnum,1:specnum))),
     functioning = unlist(plot_values)
     )
 
@@ -361,21 +361,21 @@ return(plot_values_df)
 ### Transgressive overyielding
 ```{r}
 
-env_metrics_list_oy <- 
+hab_metrics_list_oy <- 
   pblapply(plot_values_df_list, function(PV) {
     
     plot_values_wide <-
       PV %>% 
-      spread(environment, functioning)
+      spread(habitat, functioning)
 
 #calculate average functioning for each env combination at each scale and store results in dataframe
-env_values <- 
-lapply(env_comb, function(x) { #for all scales (1:5)
+hab_values <- 
+lapply(hab_comb, function(x) { #for all scales (1:5)
   apply(x, 2, function(y) { #for all environmental combinations
    
      df <- data.frame( #average functioning for this environment combination
-       env_comb = paste0(y, collapse = " "),
-       envnum = length(y),
+       hab_comb = paste0(y, collapse = " "),
+       habnum = length(y),
        richness = plot_values_wide$richness,
        functioning = rowMeans(plot_values_wide[,y]),
        stringsAsFactors = FALSE
@@ -383,12 +383,12 @@ lapply(env_comb, function(x) { #for all scales (1:5)
   })
   })
 
-env_values <- bind_rows(unlist(env_values, recursive = FALSE))
+hab_values <- bind_rows(unlist(hab_values, recursive = FALSE))
 
 # calculate BEF metrics for each environment combination
-env_metrics <- 
-  env_values %>% 
-  group_by(env_comb, envnum) %>%
+hab_metrics <- 
+  hab_values %>% 
+  group_by(hab_comb, habnum) %>%
   nest() %>% 
   mutate(mix = map_dbl(data, function(x) {x[x$richness == specnum,]$functioning}),
          max_mono = map_dbl(data, function(x) {max(x[x$richness == 1,]$functioning)}),
@@ -396,14 +396,14 @@ env_metrics <-
 })
 
   
-env_metrics_list <- 
-lapply(env_metrics_list_oy, function(x){
+hab_metrics_list <- 
+lapply(hab_metrics_list_oy, function(x){
   x %>% 
   select(-data) %>% 
-  gather(metric, value, -envnum, -env_comb) %>%
+  gather(metric, value, -habnum, -hab_comb) %>%
   ungroup() %>% 
   nest(data = -metric) %>% 
-  mutate(lm = map(data, ~lm(value ~ envnum, data = .x))) %>% 
+  mutate(lm = map(data, ~lm(value ~ habnum, data = .x))) %>% 
   select(-data)
 })
 
@@ -413,8 +413,8 @@ lapply(env_metrics_list_oy, function(x){
 ```{r}
 
 Results <- 
- bind_rows(env_metrics_list) %>% 
-  mutate(slope = map_dbl(map(.$lm, coef), "envnum")) %>% 
+ bind_rows(hab_metrics_list) %>% 
+  mutate(slope = map_dbl(map(.$lm, coef), "habnum")) %>% 
   mutate(Intercept = map_dbl(map(.$lm, coef),"(Intercept)")) %>% 
   select(-lm) %>% 
    mutate(metric = factor(metric, 
@@ -441,17 +441,17 @@ Results %>%
 
 ```{r}
 # predict new data
-env_pred = seq(1,5,0.1)
+hab_pred = seq(1,5,0.1)
 
-newdata = tibble(rep = rep(1:(nrow(Results)/3), each = length(env_pred)),
-                 env_pred = rep(env_pred, (nrow(Results)/3)))
+newdata = tibble(rep = rep(1:(nrow(Results)/3), each = length(hab_pred)),
+                 hab_pred = rep(hab_pred, (nrow(Results)/3)))
 
 Results_pred <- 
   Results %>% 
   group_by(metric) %>% 
   mutate(rep = 1:n()) %>% 
   left_join(newdata) %>% 
-  mutate(predict = slope*env_pred+Intercept)
+  mutate(predict = slope*hab_pred+Intercept)
 
 med_slope <- 
 Results %>% 
@@ -468,7 +468,7 @@ Results %>%
 
 
 Fig_2a <- 
-ggplot(Results_pred, aes(x = env_pred, y = predict, group = paste(rep, metric), colour = metric))+
+ggplot(Results_pred, aes(x = hab_pred, y = predict, group = paste(rep, metric), colour = metric))+
  # geom_line(size = 0.5, alpha = 0.05)+
   geom_line(data = Results_pred %>% 
               left_join(med_slope) %>% 
@@ -476,7 +476,7 @@ ggplot(Results_pred, aes(x = env_pred, y = predict, group = paste(rep, metric), 
  # facet_wrap(~metric)+
   geom_hline(yintercept = 1, colour = "black", linetype = "dashed") +
   theme_meta()+
-  labs(y = "Transgressive overyielding", x = "Scale")+
+  labs(y = "Transgressive overyielding", x = "Habitat heterogeneity")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
@@ -529,25 +529,25 @@ ggplot(Results, aes(fill = metric, colour = metric))+
 Fig_2a_i
 ```
 
-In what percentage of cases does the performance of the mixture exceed the performance of the highest monoculture at the largest scale?
+In what percentage of cases does the performance of the mixture exceed the performance of the highest monoculture at the highest level of habitat heterogeneity?
 
 ```{r}
 
-env_metrics_transgressive <- 
+hab_metrics_transgressive <- 
   pblapply(plot_values_df_list, function(PV) {
     
     plot_values_wide <-
       PV %>% 
-      spread(environment, functioning)
+      spread(habitat, functioning)
 
 #calculate average functioning for each env combination at each scale and store results in dataframe
-env_values <- 
-lapply(env_comb, function(x) { #for all scales (1:5)
+hab_values <- 
+lapply(hab_comb, function(x) { #for all scales (1:5)
   apply(x, 2, function(y) { #for all environmental combinations
    
      df <- data.frame( #average functioning for this environment combination
-       env_comb = paste0(y, collapse = " "),
-       envnum = length(y),
+       hab_comb = paste0(y, collapse = " "),
+       habnum = length(y),
        richness = plot_values_wide$richness,
        functioning = rowMeans(plot_values_wide[,y]),
        stringsAsFactors = FALSE
@@ -555,33 +555,33 @@ lapply(env_comb, function(x) { #for all scales (1:5)
   })
   })
 
-env_values <- bind_rows(unlist(env_values, recursive = FALSE))
+hab_values <- bind_rows(unlist(hab_values, recursive = FALSE))
 
 # calculate BEF metrics for each environment combination
-env_metrics <- 
-  env_values %>% 
-  group_by(env_comb, envnum) %>%
+hab_metrics <- 
+  hab_values %>% 
+  group_by(hab_comb, habnum) %>%
   nest() %>% 
   mutate(transgressive = map_dbl(data, function(x) {
     x[x$richness == specnum,]$functioning / 
       max(x[x$richness == 1,]$functioning)})) 
 
-return(env_metrics)
+return(hab_metrics)
 })
 
 
 mean_transgressive <- 
-lapply(env_metrics_transgressive, function(df) {
+lapply(hab_metrics_transgressive, function(df) {
   
   df %>% 
-    group_by(envnum) %>% 
+    group_by(habnum) %>% 
     summarise(transgressive = mean(transgressive), .groups = "drop")
 }) %>% 
   bind_rows(.id = "run") 
 
 mean_transgressive %>% 
   mutate(transgressive = transgressive > 1) %>% 
-  group_by(envnum) %>% 
+  group_by(habnum) %>% 
   summarise(`trans. OY > 1 (%)`=sum(transgressive) / n())
 
 ```
@@ -604,18 +604,18 @@ Species_specialisation <-
   }) %>% 
   lapply(., function(x) {
     ssp <- length(unique(x))/length(x)
-    (ssp-(1/envnum))/(1-(1/envnum))
+    (ssp-(1/habnum))/(1-(1/habnum))
 }) %>% unlist()
 
 sppT <-   
 tibble(spec_spec = Species_specialisation, 
-       transgressive = filter(Results, metric == "transgressive")$slope)
+       transgressive = filter(Results, metric == "transgressive\noveryielding")$slope)
 
 ggplot(sppT, aes(x = spec_spec, y = transgressive))+
   geom_beeswarm(fill = "black", alpha = 0.1)+
   geom_smooth(se = TRUE, method = "lm", colour = "black", size = 0.5)+
   theme_bw()+
-  labs(x = "Species specialisation index", y = "Transgressive overyielding ~ scale (est.)"  )+
+  labs(x = "Species specialisation index", y = "Trans. overyield. ~ heterogeneity (est.)"  )+
   theme_meta()
 
 ggsave(filename = here("figures", "Fig_S6.pdf"), width = 6, height = 4)

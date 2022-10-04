@@ -15,11 +15,6 @@ library(ggplot2)
 library(purrr)
 library(gridExtra)
 
-# check that the Hmisc package is installed
-if(! "Hmisc" %in% installed.packages()[,1]) stop(
-    "this script requires the 'Hmisc' to be installed"
-  )
-
 # load the plotting theme function
 source(here("function_plotting_theme.R"))
 ```
@@ -111,8 +106,8 @@ To run the code and produce Fig S4 and S9, set `Sens_analysis = TRUE`
 Note that all the code will be executed when `Sens_analysis = TRUE` but the other figures will not be exported. 
 ```{r}
 
-Sens_analysis = FALSE
-# Sens_analysis = TRUE
+# Sens_analysis = FALSE
+Sens_analysis = TRUE
 
 if(Sens_analysis){
   
@@ -126,7 +121,7 @@ Data %>%
 
 ### species specialisation
 
-This calculates the species specialisation in our experiment, as defined in the main text. Note that it doesn't change with the exclusion of strain a, as this strain doesn't have the highest productivity in any environment
+This calculates the species specialisation in our experiment, as defined in the main text. Note that it doesn't change with the exclusion of strain a, as this strain doesn't have the highest productivity in any antibiotic habitat
 
 ```{r}
 
@@ -149,7 +144,7 @@ ssp <- length(unique(dom_strains)) / length(dom_strains)
 ```
 
 ## Fig. 3A 
-Production of each strain in each environment.
+Production of each strain in each habitat.
 
 In this graph we look at the measured production of each strain in each antibiotic treatment. Strains have been selected to maximise the variance in growth performance such that different strains are expected to perform well under different antibiotic treatments and no strain is supposed to perform well in all conditions. 
 
@@ -191,7 +186,7 @@ if(!Sens_analysis){
 Fig_3A
 ```
 
-+ Test if monoculture values vary significantly between species in each environment (such that transgressive overyielding doesn't just vary with noise)
++ Test if monoculture values vary significantly between species in each habitat (such that transgressive overyielding doesn't just vary with noise)
 
 ```{r}
 
@@ -213,7 +208,7 @@ Data %>%
 
 Production-richness relationships.
 
-In this graph we explore the biodiversity - ecosystem functioning (BEF) relationship in each environment. Community production is the metric of functioning and initial strain richness is the measure of biodiversity. 
+In this graph we explore the biodiversity - ecosystem functioning (BEF) relationship in each antibiotic habitat. Community production is the metric of functioning and initial strain richness is the measure of biodiversity. 
 
 ```{r}
 
@@ -322,25 +317,25 @@ plots
 
 ##Transgressive overyielding
 
-We calculate the transgressive overyielding for all combinations of environments. 
+We calculate the transgressive overyielding for all combinations of habitats. 
 
-+ for all scales (1:5 environments)
-+ for all possible unique combinations of environments 
++ for all leveks of habitat heterogeneity (1:5 habitats)
++ for all possible unique combinations of habitats 
 
-We calculate the functioning of a given species mixture (or monoculture) in that combination of environments at that scale as the average functioning of that species mixture in the single environments. 
+We calculate the functioning of a given species mixture (or monoculture) in that combination of habitats at each level of habitat heterogeneity as the average functioning of that species mixture in the single environments. 
 
 **Transgressive overyielding** is calculated as:
 
 + highest mixture value / maximum monoculture value
 
 
-In a first step we calculate the mean functioning for each strain and strain combinations for all possible combinations of environments. 
+In a first step we calculate the mean functioning for each strain and strain combinations for all possible combinations of habitats. 
 
 As there is no sensible way how the replicated measurements should be matched across environments, we first calculate the average for each strain combination in each environment. 
 
 ```{r, warning=FALSE}
 
-#calculate the average growth yield of each of the 32 strain combinations in each environment and reshape the data to one combination per row and the 5 columns for the 5 environments. 
+#calculate the average growth yield of each of the 32 strain combinations in each habitat and reshape the data to one combination per row and the 5 columns for the 5 habitats. Note that habitats are different antiobiotics. 
 
 Data_wide <- 
   Data %>% 
@@ -360,33 +355,33 @@ ab_comb <- sapply(1:length(ab), function(x) combn(ab, x))
 specnum <- Data %>% filter(Richness == 1) %>% pull(gene) %>% unique %>% length()
 
 # calculate the average performance or each strain combination in each environment combination
-env_values <- 
+hab_values <- 
 lapply(ab_comb, function(x) { #for all levels of environmental richness (scale: 1:5)
   apply(x, 2, function(y) { #for all combination of environments
    
      df <- data.frame(
-       env_comb = paste0(y, collapse = " "), # which combination of environments
-       envnum = length(y), # what scale
+       hab_comb = paste0(y, collapse = " "), # which combination of habitats
+       habnum = length(y), # what scale
        richness = Data_wide$Richness, 
        gene = Data_wide$gene,
-       functioning = rowMeans(Data_wide[,y]) #mean of functioning across environments
-       #functioning = rowSums(Data_wide[,y]) #sum of functioning across environments
+       functioning = rowMeans(Data_wide[,y]) #mean of functioning across habitats
+       #functioning = rowSums(Data_wide[,y]) #sum of functioning across habitats
                      )
   })
   })
 
 # bind results to one dataframe
-env_values <- bind_rows(unlist(env_values, recursive = FALSE))
+hab_values <- bind_rows(unlist(hab_values, recursive = FALSE))
 ```
 
 
 ### plot power-fits 
 
-The relationship between average strain community production and richness for the 5 spatial scales. 
+The relationship between average strain community production and richness for the 5 levels of habitat heterogeneity. 
 ```{r}
 
-env_values %>%
-  group_by(env_comb, envnum) %>% 
+hab_values %>%
+  group_by(hab_comb, habnum) %>% 
   nest() %>% 
   mutate(log_fit = map(data, ~lm(log(functioning) ~ log(richness), data = .))) %>% 
   mutate(log_fit = map(log_fit, tidy)) %>% 
@@ -397,12 +392,12 @@ env_values %>%
                                     start = list(a = exp(`(Intercept)`) , b = `log(richness)`)))) %>%  
   mutate(power_fit = map(power_fit, augment)) %>% 
   unnest(cols = power_fit) %>% 
-  ggplot(aes(x = richness, y = functioning/1e8, colour = as.factor(envnum)))+
-  geom_point(aes(group = env_comb), size = 1, alpha = 1, position = position_dodge(width = 0.7))+
-  geom_line(aes(y = .fitted/1e8, group = env_comb), position = position_dodge(width = 0.7))+
+  ggplot(aes(x = richness, y = functioning/1e8, colour = as.factor(habnum)))+
+  geom_point(aes(group = hab_comb), size = 1, alpha = 1, position = position_dodge(width = 0.7))+
+  geom_line(aes(y = .fitted/1e8, group = hab_comb), position = position_dodge(width = 0.7))+
   # scale_color_manual(values = viridis(6)[1:5], name = "Scale")+
   theme_meta()+
-  facet_wrap(~envnum)+
+  facet_wrap(~habnum)+
   labs(y = paste("Production x", expression(1e8)), x = "Species richness")+
   guides(colour = guide_legend(ncol = 3))+
   theme(legend.position = c(0.85,0.25), 
@@ -419,9 +414,9 @@ Now we calculate transgressive overyielding:
 
 ```{r}
 
-env_metrics <- 
-  env_values %>% 
-  group_by(env_comb, envnum) %>%
+hab_metrics <- 
+  hab_values %>% 
+  group_by(hab_comb, habnum) %>%
   #filter(env_comb == "Tet", envnum == 1) %>% 
   nest() %>%
   #transgressive overyielding (mean highest mixture / max monoculture)
@@ -447,8 +442,8 @@ env_metrics <-
 
 ```{r}
 
-env_metrics %>%
-  group_by(envnum) %>%
+hab_metrics %>%
+  group_by(habnum) %>%
   summarise(m.transgressive = mean(transgressive))
 
 ```
@@ -457,16 +452,16 @@ env_metrics %>%
 ### Fig 2b / S7 - transgressive overyielding
 ```{r}
 Fig_2b <- 
-env_metrics %>% 
+hab_metrics %>% 
  # select(-data) %>% 
-  gather(metric, value, -envnum, -env_comb) %>% 
+  gather(metric, value, -habnum, -hab_comb) %>% 
   filter(metric == "transgressive") %>% 
-  ggplot(aes(x = envnum, y = value)) +
+  ggplot(aes(x = habnum, y = value)) +
   geom_point( size = 2, alpha = 1, position = position_jitter(width = 0.1) )+
   stat_smooth(method = "lm", se = T, size = 0.5, colour = "black")+
   geom_hline(yintercept = 1, colour = "black", linetype = "dashed") +
   theme_meta()+
-  labs(y = "Transgressive overyielding", x = "Scale")+
+  labs(y = "Transgressive overyielding", x = "Habitat heterogeneity")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
@@ -487,24 +482,24 @@ Fig_2b
 
 ```{r}
 Fig_2b <- 
-env_metrics %>% 
+hab_metrics %>% 
   ungroup() %>% 
   #bring to common scale
   mutate(mix = mix/max(max_mono),
       max_mono = max_mono / max(max_mono)
          ) %>% 
   #select(-data) %>% 
-  gather(metric, value, -envnum, -env_comb) %>% 
+  gather(metric, value, -habnum, -hab_comb) %>% 
    mutate(metric = factor(metric, 
                          levels = c("mix", "max_mono", "transgressive"))) %>% 
  # filter(metric == "transgressive") %>% 
-  ggplot(aes(x = envnum, y = value, colour = metric)) +
+  ggplot(aes(x = habnum, y = value, colour = metric)) +
   geom_point( size = 2, alpha = 1, position = position_jitterdodge(jitter.width =  0.05, dodge.width = 0.4) )+
   stat_smooth(method = "lm", se = T, size = 0.5, position = position_dodge(width = 0.4))+
   geom_hline(yintercept = 1, colour = "black", linetype = "dashed") +
  # facet_wrap(~metric, nrow = 1)+
   theme_meta()+
-  labs(y = "Transgressive overyielding", x = "Scale")+
+  labs(y = "Transgressive overyielding", x = "Habitat heterogeneity")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
@@ -528,15 +523,15 @@ Fig_2b
 ### transgressive overyielding - statistics
 ```{r}
  
-env_metrics %>% 
+hab_metrics %>% 
   ungroup() %>% 
   mutate(across(one_of("max_mono", "mix"), function(x) x/ max(max_mono))) %>% 
-  gather(metric, value, -envnum, -env_comb) %>%
+  gather(metric, value, -habnum, -hab_comb) %>%
   nest(data = !one_of("metric")) %>% 
-  mutate(lm = map(data, ~lm(value ~ envnum, data = .x))) %>% 
+  mutate(lm = map(data, ~lm(value ~ habnum, data = .x))) %>% 
   mutate(stat = (map(.$lm, tidy))) %>% 
   unnest(stat) %>% 
-  filter(term == "envnum") %>% 
+  filter(term == "habnum") %>% 
   mutate(across(is.numeric, round, 3))
   
 ```

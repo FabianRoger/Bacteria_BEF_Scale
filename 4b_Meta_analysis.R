@@ -1,7 +1,7 @@
 
 # Title: Gamfeldt et al. Biodiversity and ecosystem functioning across gradients in spatial scale
 
-# Project: Literature synthesis
+# Project: Meta-analysis
 
 # load relevant libraries
 library(dplyr)
@@ -76,7 +76,8 @@ meta_an <-
 
 ### analysis
 
-# for each Experiment_ID, calculate log(mixture/mean monoculture) for each combination of environments
+# for each Experiment_ID, calculate log(mixture/mean monoculture) for each combination of habitats
+# in the raw data, habitat is called Environment
 
 # convert to list by experiment ID
 meta_l <- split(meta_an, meta_an$Experiment_ID)
@@ -86,7 +87,7 @@ l.out <-
     
     d.l.in <- r
     
-    # get all combinations of environments
+    # get all combinations of habitats
     x <- unique(d.l.in$Environment)
     c.n <- vector("list", length = length(x))
     for (j in x) {
@@ -147,7 +148,7 @@ l.out <-
     r.s <- unlist(r.l)
     
     # pull this into a data.frame
-    d.f.o <- data.frame(environment.id = rep(l.s, each = 2),
+    d.f.o <- data.frame(habitat.id = rep(l.s, each = 2),
                         response = rep(c("l.rr", "t.oy"), times = length(l.s)),
                         value = r.s)
     
@@ -157,15 +158,15 @@ l.out <-
                   names_from = "response",
                   values_from = "value")
     
-    # add a column for the number of environments
+    # add a column for the number of habitats
     d.f.o <- 
       d.f.o %>%
-      mutate(environments = nchar( as.character(environment.id) ))
+      mutate(habitats = nchar( as.character(habitat.id) ))
     
     # reorder the columns
     d.f.o <- 
       d.f.o %>%
-      select(environment.id, environments, l.rr, t.oy)
+      select(habitat.id, habitats, l.rr, t.oy)
     
     # return this data.frame
     return(d.f.o)
@@ -183,8 +184,8 @@ l.df <- bind_rows(l.out, .id = "Experiment_ID")
 l.est <- 
   lapply(l.out, function(x) {
     
-    lm.x <- lm(l.rr ~ environments, data = x)
-    lm.y <- lm(t.oy ~ environments, data = x)
+    lm.x <- lm(l.rr ~ habitats, data = x)
+    lm.y <- lm(t.oy ~ habitats, data = x)
     
     data.frame(l.rr.est = as.numeric(lm.x$coefficients[2]),
                t.oy.est = as.numeric(lm.y$coefficients[2]))
@@ -198,6 +199,7 @@ l.est <- bind_rows(l.est, .id = "Experiment_ID")
 ### calculate exploratory covariates
 
 # create a data.frame from which to calculate the covariates
+# here, Environment is equivalent to habitat
 cov.df.prep <- 
   meta_an %>%
   select(Experiment_ID, Environment, Mixture_treatment, Mixture_ID, Ecosystem_function_mean)
@@ -240,12 +242,12 @@ est.cov <-
 
 x1 <- 
   ggplot(data = l.df,
-       mapping = aes(x = environments, y = t.oy, colour = Experiment_ID)) +
+       mapping = aes(x = habitats, y = t.oy, colour = Experiment_ID)) +
   geom_hline(yintercept = 1, linetype = "dashed") +
   geom_smooth(method = "lm", se = FALSE, size = 0.5) +
   geom_jitter(width = 0.1, alpha = 0.2) +
   ylab("Trangressive overyielding") +
-  xlab("Scale") +
+  xlab("Habitat heterogeneity") +
   scale_colour_viridis_d(option = "C") +
   theme(legend.position = "none") +
   theme_meta()
@@ -254,7 +256,7 @@ x2 <-
   ggplot(data = l.est,
        mapping = aes(x = t.oy.est)) +
   ylab("") +
-  xlab("Transgressive overyielding ~ scale (est.)") +
+  xlab("Trans. overyield. ~ heterogeneity (est.)") +
   geom_histogram(alpha = 1) +
   geom_vline(xintercept = 0, linetype = "dashed") +
   # scale_x_continuous(limits = c(-0.5, 0.6)) +
@@ -265,7 +267,7 @@ x3 <-
   ggplot(data = est.cov,
        mapping = aes(x = species.specialisation, y = t.oy.est, colour = overyielding.m)) +
   geom_jitter(width = 0.01) +
-  ylab("Trangressive overyielding ~ scale (est.)") +
+  ylab("Trans. overyield. ~ heterogeneity (est.)") +
   xlab("Species specialisation index") +
   viridis::scale_colour_viridis(option = "C", end = 0.9) +
   guides(color = guide_colourbar(title.position = "top", 
@@ -290,7 +292,7 @@ x4 <-
   ggplot(data = est.cov,
        mapping = aes(x = overyielding.m, y = t.oy.est, colour = species.specialisation)) +
   geom_point() +
-  ylab("Trangressive overyielding ~ scale (est.)") +
+  ylab("Trans. overyield. ~ heterogeneity (est.)") +
   xlab("Average overyielding") +
   viridis::scale_colour_viridis(option = "C", end = 0.9) +
   guides(color = guide_colourbar(title.position = "top", 
@@ -365,12 +367,12 @@ levels(si.dat$Experiment_ID) <- LETTERS[1:length(si.dat$Experiment_ID)]
 
 f.S5 <- 
   ggplot(data = si.dat, 
-         mapping = aes(x = environments, y = t.oy,
+         mapping = aes(x = habitats, y = t.oy,
                        colour = Realm, shape = `Ecosystem function`,
                        group = NULL)) +
   geom_jitter(width = 0.01, size = 1.2, alpha = 0.7) +
   ylab("Transgressive overyielding") +
-  xlab("Scale") +
+  xlab("Habitat heterogeneity") +
   scale_colour_viridis_d(option = "C", end = 0.9) +
   geom_smooth(method = "lm", se = FALSE) +
   facet_wrap(~Experiment_ID, scales = "free", ncol = 5) +
