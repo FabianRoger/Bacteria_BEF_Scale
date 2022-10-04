@@ -6,6 +6,7 @@ html_notebook: default
 
 ```{r}
 library(ggplot2)
+library(cowplot)
 library(here)
 source(here("function_plotting_theme.R"))
 ```
@@ -52,8 +53,8 @@ Fig_2b <-
 
 # add another figure without the BEF slope
 p1 <- 
-  ggpubr::ggarrange(Fig_2a + labs(x = "Scale"), 
-                    Fig_2b + labs(x = "Scale"), 
+  ggpubr::ggarrange(Fig_2a + labs(x = "Habitat heterogeneity"), 
+                    Fig_2b + labs(x = "Habitat heterogeneity"), 
                     ncol = 2, nrow = 1, widths = c(1, 1),
                     labels = c("A", "B"),
                     font.label = 
@@ -88,7 +89,7 @@ Fig_3B <-
   theme(legend.position = "none")+
   labs(y = "")
 
-Legend <- get_legend(
+Legend <- cowplot::get_legend(
   # create some space to the left of the legend
   Fig_3A + 
     theme(legend.position = "bottom", 

@@ -15,6 +15,9 @@ library(ggplot2)
 library(purrr)
 library(gridExtra)
 
+# the Hmisc package must be installed
+install.packages("Hmisc")
+
 # load the plotting theme function
 source(here("function_plotting_theme.R"))
 ```
