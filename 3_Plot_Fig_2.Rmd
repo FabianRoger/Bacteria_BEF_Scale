@@ -46,7 +46,7 @@ Fig_2a <-
   labs(x = "")+
   theme_meta()+
   scale_y_continuous(limits = c(-0.2,1.1))+
-  labs(y = "Transgressive overyielding / standardized yield", x = "Habitat heterogeneity")
+  labs(y = "Transgressive overyielding /\n standardized productivity", x = "Habitat heterogeneity")
 
 
 Fig_2a_i <- 
