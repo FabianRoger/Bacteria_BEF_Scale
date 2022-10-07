@@ -5,15 +5,27 @@ html_notebook: default
 ---
 
 ```{r, message=FALSE}
-library(dplyr)
-library(tidyr)
-library(purrr)
-library(ggplot2)
-library(ggbeeswarm)
-library(broom)
-library(here)
-library(pbapply)
-library(viridis)
+install_if <- function(x) {
+  
+  if(x %in% rownames(installed.packages()) == FALSE) {
+  message(paste(x, "is equired but not installed. Installing now"))
+  Sys.sleep(1)
+  install.packages(x)
+  library(x)
+  } else{ 
+    library(x, character.only=TRUE)}
+  }
+
+install_if("dplyr")
+install_if("tidyr")
+install_if("purrr")
+install_if("ggplot2")
+install_if("ggbeeswarm")
+install_if("broom")
+install_if("here")
+install_if("pbapply")
+install_if("viridis")
+
 source(here("function_plotting_theme.R"))
 ```
 
