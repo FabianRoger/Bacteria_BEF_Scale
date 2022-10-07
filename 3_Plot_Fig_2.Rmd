@@ -5,9 +5,21 @@ html_notebook: default
 ---
 
 ```{r}
-library(ggplot2)
-library(cowplot)
-library(here)
+install_if <- function(x) {
+  
+  if(x %in% rownames(installed.packages()) == FALSE) {
+  message(paste(x, "is equired but not installed. Installing now"))
+  Sys.sleep(1)
+  install.packages(x)
+  library(x)
+  } else{ 
+    library(x, character.only=TRUE)}
+  }
+
+install_if("ggplot2")
+install_if("cowplot")
+install_if("here")
+
 source(here("function_plotting_theme.R"))
 ```
 
@@ -32,8 +44,10 @@ arrange figures
 Fig_2a <- 
   Fig_2a +
   labs(x = "")+
-  theme_meta()
-Fig_2a
+  theme_meta()+
+  scale_y_continuous(limits = c(-0.2,1.1))+
+  labs(y = "Transgressive overyielding / standardized yield", x = "Habitat heterogeneity")
+
 
 Fig_2a_i <- 
   Fig_2a_i +
@@ -49,6 +63,8 @@ Fig_2a <-
 Fig_2b <- 
   Fig_2b +
   labs(x = "")+
+  scale_y_continuous(limits = c(-0.2,1.1))+
+  labs(y = "")+
    theme_meta()
 
 # add another figure without the BEF slope
