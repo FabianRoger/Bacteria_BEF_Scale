@@ -4,17 +4,28 @@
 # Project: Meta-analysis
 
 # load relevant libraries
-library(dplyr)
-library(tidyr)
-library(readr)
-library(here)
-library(ggplot2)
-library(ggpubr)
+install_if <- function(x) {
+  
+  if(x %in% rownames(installed.packages()) == FALSE) {
+    message(paste(x, "is equired but not installed. Installing now"))
+    Sys.sleep(1)
+    install.packages(x)
+    library(x)
+  } else{ 
+    library(x, character.only=TRUE)}
+}
 
-# install libraries where functions are called from
-if( (("gtools" %in% installed.packages()[,1]) & ("broom" %in% installed.packages()[,1]) & ("viridis" %in% installed.packages()[,1])) == FALSE) {
-  print("WARNING! this script requires gtools and broom to be installed")
-} 
+# load libraries, install first if necessary 
+install_if("dplyr")
+install_if("tidyr")
+install_if("readr")
+install_if("here")
+install_if("ggplot2")
+install_if("ggpubr")
+install_if("gtools")
+install_if("broom")
+install_if("viridis")
+
 
 # make a folder to export analysis data
 if(! dir.exists(here("figures"))){
