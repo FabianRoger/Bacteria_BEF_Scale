@@ -16,7 +16,9 @@ library(purrr)
 library(gridExtra)
 
 # the Hmisc package must be installed
-install.packages("Hmisc")
+if(!("Hmisc" %in% installed.packages()[,1])){
+  install.packages("Hmisc")
+}
 
 # load the plotting theme function
 source(here("function_plotting_theme.R"))
@@ -109,8 +111,8 @@ To run the code and produce Fig S4 and S9, set `Sens_analysis = TRUE`
 Note that all the code will be executed when `Sens_analysis = TRUE` but the other figures will not be exported. 
 ```{r}
 
-# Sens_analysis = FALSE
-Sens_analysis = TRUE
+Sens_analysis = FALSE
+# Sens_analysis = TRUE
 
 if(Sens_analysis){
   
@@ -464,7 +466,7 @@ hab_metrics %>%
   stat_smooth(method = "lm", se = T, size = 0.5, colour = "black")+
   geom_hline(yintercept = 1, colour = "black", linetype = "dashed") +
   theme_meta()+
-  labs(y = "Transgressive overyielding", x = "Habitat heterogeneity")+
+  labs(y = "Transgressive overyielding/Function", x = "Habitat heterogeneity")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
@@ -502,7 +504,7 @@ hab_metrics %>%
   geom_hline(yintercept = 1, colour = "black", linetype = "dashed") +
  # facet_wrap(~metric, nrow = 1)+
   theme_meta()+
-  labs(y = "Transgressive overyielding", x = "Habitat heterogeneity")+
+  labs(y = "Transgressive overyielding/Function", x = "Habitat heterogeneity")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),

@@ -65,7 +65,7 @@ names(spec_comb) <- paste("richness", c(1:specnum))
 We create 5 habitats (for `habnum = 5`) named Habitat_1 to Habitat_5 and get every possible combination of the five habitats for all 1, 2, 3, 4 and 5 habitat combinations (corresponding to the different scales)
 
 ```{r}
-hab <- paste("Habitat_", c(1:envnum), sep = "")
+hab <- paste("Habitat_", c(1:habnum), sep = "")
 hab_comb <- sapply(c(1:habnum), function(x) combn(hab, x)) 
 names(hab_comb) <- paste("Heterogeneity", c(1:habnum))
 ```
@@ -476,7 +476,7 @@ ggplot(Results_pred, aes(x = hab_pred, y = predict, group = paste(rep, metric), 
  # facet_wrap(~metric)+
   geom_hline(yintercept = 1, colour = "black", linetype = "dashed") +
   theme_meta()+
-  labs(y = "Transgressive overyielding", x = "Habitat heterogeneity")+
+  labs(y = "Transgressive overyielding/Function", x = "Habitat heterogeneity")+
   theme(legend.position = "none",
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
