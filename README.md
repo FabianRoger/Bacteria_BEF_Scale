@@ -25,11 +25,11 @@ In addition, there are two other scripts:
 + 2a_Join_and_export_raw_data.Rmd
 + 2b_Exploring_data_BSL2_6_7_ATCC_ABs_absolute.R
 
-These scripts cannot be run as the necessary data are not provided. The first script documents how the raw data files from the OD reader in the experiment have been joined. The joined data are uploaded to figshare and downloaded in the Analysis.Rmd script. 
+These scripts cannot be run as the necessary data are not provided. The first script documents how the raw data files from the OD reader in the experiment have been joined. The joined data are uploaded to figshare and downloaded in the `2c_Experiment_analysis.nb.Rmd` script. 
 
 The second script documents how the strains have been selected to maximize variance in growth performance across environments. The script is for internal documentation. These data are not public. 
 
-One the scripts above have been run, you can now reproduce Fig. 2, Fig. 3 and Fig. S7 using the script:
+Once the scripts above have been run, you can now reproduce Fig. 2, Fig. 3 and Fig. S7 using the script:
 
 + 3_Plot_Fig_2.Rmd
 

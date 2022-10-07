@@ -4,8 +4,19 @@
 # Project: Meta-analysis data assessment
 
 # load relevant libraries
-library(dplyr)
-library(readr)
+install_if <- function(x) {
+  
+  if(x %in% rownames(installed.packages()) == FALSE) {
+    message(paste(x, "is equired but not installed. Installing now"))
+    Sys.sleep(1)
+    install.packages(x)
+    library(x)
+  } else{ 
+    library(x, character.only=TRUE)}
+}
+
+install_if("dplyr")
+install_if("readr")
 
 
 ### download data
