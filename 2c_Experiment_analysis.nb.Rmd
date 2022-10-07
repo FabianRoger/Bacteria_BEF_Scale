@@ -5,18 +5,27 @@ output: html_notebook
 
 
 ```{r, message=FALSE}
-library(here)
-library(dplyr)
-library(tidyr)
-library(broom)
-library(forcats)
-library(readr)
-library(ggplot2)
-library(purrr)
-library(gridExtra)
 
-# the Hmisc package must be installed
-install.packages("Hmisc")
+install_if <- function(x) {
+  
+  if(x %in% rownames(installed.packages()) == FALSE) {
+  message(paste(x, "is equired but not installed. Installing now"))
+  Sys.sleep(1)
+  install.packages(x)
+  library(x)
+  } else{ 
+    library(x, character.only=TRUE)}
+  }
+
+install_if("here")
+install_if("dplyr")
+install_if("tidyr")
+install_if("broom")
+install_if("forcats")
+install_if("readr")
+install_if("ggplot2")
+install_if("purrr")
+install_if("gridExtra")
 
 # load the plotting theme function
 source(here("function_plotting_theme.R"))
@@ -109,8 +118,8 @@ To run the code and produce Fig S4 and S9, set `Sens_analysis = TRUE`
 Note that all the code will be executed when `Sens_analysis = TRUE` but the other figures will not be exported. 
 ```{r}
 
-# Sens_analysis = FALSE
-Sens_analysis = TRUE
+Sens_analysis = FALSE
+#Sens_analysis = TRUE
 
 if(Sens_analysis){
   
@@ -507,7 +516,7 @@ hab_metrics %>%
         axis.ticks.length=unit(-0.25, "cm"),
         axis.text.x = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")),
         axis.text.y = element_text(margin=unit(c(0.5,0.5,0.5,0.5), "cm")))+
- # scale_y_continuous(limits = c(0, 1))+
+  scale_y_continuous(limits = c(0, 1))+
   scale_color_viridis_d(option = "C", end = 0.8)
   NULL
 
