@@ -50,7 +50,7 @@ This script exports:
 + Fig S4
 + the subplots for Figure S7
 
-See script `3_plot_Fig_2.Rmd` for the assemblage and export of figure 2, 3 and S7. 
+See script `03_Plot_Figs_2_3_S7.Rmd` for the assemblage and export of figure 2, 3 and S7. 
 
 make folder to export figures
 ```{r}
@@ -64,7 +64,7 @@ if(! dir.exists(here("figures"))){
 
 This script analyses the data from the experiments. The analysis of the data follow the same structure as the analysis of the simulations. 
 
-##download data
+## download data
 
 The raw data are archived on [Figshare](https://doi.org/10.6084/m9.figshare.12279884.v1)
 
@@ -120,7 +120,7 @@ Data %>%
   mutate(Richness = nchar(gene)) 
 ```
 
-##sensitivity analysis 
+## sensitivity analysis 
 
 This part is a sensitivity analysis, producing Fig S4 and Fig S9.
 It excludes strain "a" which has strong negative effects on the other strains in mixtures. 
@@ -389,8 +389,6 @@ lapply(ab_comb, function(x) { #for all levels of environmental richness (scale: 
        richness = Data_wide$Richness, 
        gene = Data_wide$gene,
        functioning = rowMeans(Data_wide[,y]) #mean of functioning across habitats
-       #functioning = rowSums(Data_wide[,y]) #sum of functioning across habitats
-                     )
   })
   })
 
@@ -419,7 +417,6 @@ hab_values %>%
   ggplot(aes(x = richness, y = functioning/1e8, colour = as.factor(habnum)))+
   geom_point(aes(group = hab_comb), size = 1, alpha = 1, position = position_dodge(width = 0.7))+
   geom_line(aes(y = .fitted/1e8, group = hab_comb), position = position_dodge(width = 0.7))+
-  # scale_color_manual(values = viridis(6)[1:5], name = "Scale")+
   theme_meta()+
   facet_wrap(~habnum)+
   labs(y = paste("Production x", expression(1e8)), x = "Species richness")+
@@ -441,9 +438,7 @@ Now we calculate transgressive overyielding:
 hab_metrics <- 
   hab_values %>% 
   group_by(hab_comb, habnum) %>%
-  #filter(env_comb == "Tet", envnum == 1) %>% 
   nest() %>%
-  #transgressive overyielding (mean highest mixture / max monoculture)
   mutate(transgressive = map(data, function(x) {
    x %>% 
       group_by(gene) %>% 
@@ -512,16 +507,13 @@ hab_metrics %>%
   mutate(mix = mix/max(max_mono),
       max_mono = max_mono / max(max_mono)
          ) %>% 
-  #select(-data) %>% 
   gather(metric, value, -habnum, -hab_comb) %>% 
    mutate(metric = factor(metric, 
                          levels = c("mix", "max_mono", "transgressive"))) %>% 
- # filter(metric == "transgressive") %>% 
   ggplot(aes(x = habnum, y = value, colour = metric)) +
   geom_point( size = 2, alpha = 1, position = position_jitterdodge(jitter.width =  0.05, dodge.width = 0.4) )+
   stat_smooth(method = "lm", se = T, size = 0.5, position = position_dodge(width = 0.4))+
   geom_hline(yintercept = 1, colour = "black", linetype = "dashed") +
- # facet_wrap(~metric, nrow = 1)+
   theme_meta()+
   labs(y = "Transgressive overyielding/Standardised function", x = "Habitat heterogeneity")+
   theme(legend.position = "none",
@@ -556,8 +548,7 @@ hab_metrics %>%
   mutate(stat = (map(.$lm, tidy))) %>% 
   unnest(stat) %>% 
   filter(term == "habnum") %>% 
-  mutate(across(is.numeric, round, 3))
+  mutate(across(is.numeric, round, 3)) %>%
+  print()
   
 ```
-
-

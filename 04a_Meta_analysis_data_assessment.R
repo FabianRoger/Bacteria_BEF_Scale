@@ -7,7 +7,7 @@
 install_if <- function(x) {
   
   if(x %in% rownames(installed.packages()) == FALSE) {
-    message(paste(x, "is equired but not installed. Installing now"))
+    message(paste(x, "is required but not installed. Installing now"))
     Sys.sleep(1)
     install.packages(x)
     library(x)
@@ -17,7 +17,6 @@ install_if <- function(x) {
 
 install_if("dplyr")
 install_if("readr")
-
 
 ### download data
 
@@ -117,4 +116,3 @@ filter(data_ass, inclusion_exclusion == "inclusion") %>%
 # 25 unique studies overall (26 experiments in total)
 
 ### END
-

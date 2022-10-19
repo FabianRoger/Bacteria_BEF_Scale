@@ -1,5 +1,5 @@
 ---
-title: "script to make multipanel figure 2, 3, S3, S4"
+title: "Script to make multipanel figures 2, 3 along with figure S7"
 output:
 html_notebook: default
 ---
@@ -8,7 +8,7 @@ html_notebook: default
 install_if <- function(x) {
   
   if(x %in% rownames(installed.packages()) == FALSE) {
-  message(paste(x, "is equired but not installed. Installing now"))
+  message(paste(x, "is required but not installed. Installing now"))
   Sys.sleep(1)
   install.packages(x)
   library(x)
@@ -19,6 +19,12 @@ install_if <- function(x) {
 install_if("ggplot2")
 install_if("cowplot")
 install_if("here")
+install_if("ggpubr")
+
+# make a folder to export analysis data
+if(! dir.exists(here("figures"))){
+  dir.create(here("figures"))
+}
 
 source(here("function_plotting_theme.R"))
 ```
@@ -136,7 +142,7 @@ ggsave(plot = Fig3, filename = here("figures", "Fig_3.pdf"),
 ```
 
 
-#Figure S7
+# Figure S7
 
 note that to produce this figure you must run the code in Analysis.nb.Rmd both with and without the sensitivity analysis
 

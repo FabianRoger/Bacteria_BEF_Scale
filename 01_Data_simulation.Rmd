@@ -8,7 +8,7 @@ html_notebook: default
 install_if <- function(x) {
   
   if(x %in% rownames(installed.packages()) == FALSE) {
-  message(paste(x, "is equired but not installed. Installing now"))
+  message(paste(x, "is required but not installed. Installing now"))
   Sys.sleep(1)
   install.packages(x)
   library(x)
@@ -46,7 +46,7 @@ if(! dir.exists(here("figures"))){
 ```
 
 
-#set up simulations
+# set up simulations
 
 + We want to simulate 5 strains of Bacteria, growing in 5 different habitats. 
 + Each Strain differs in its ability to grow on each antibiotic.
@@ -152,13 +152,6 @@ plot_values_df <-
     functioning = unlist(plot_values)
     )
 
-#small random error so that the function fitting functions don't fail
-
-# plot_values_df <- 
-#   plot_values_df %>% 
-#   mutate(functioning = functioning + rnorm(n(), 0, 0.01)) %>% 
-#   mutate(functioning = functioning + abs(min(functioning)) + 0.01)
-
 ```
 
 ### plot plot-values
@@ -245,7 +238,6 @@ hab_values %>%
   group_by(hab_comb, habnum) %>% 
   nest() %>% 
   mutate(power_fit = map(data, ~nls(functioning ~ a*richness^b, data = ., start = list(a = 1, b = 1)))) %>%
-  #mutate(power_fit = map(data, ~nls(functioning ~ a*richness/(b+richness), data = ., start = list(a = 1, b = 1)))) %>%
   mutate(power_fit = map(power_fit, augment)) %>% 
   unnest(cols = power_fit) %>% 
   ggplot(aes(x = richness, y = functioning, colour = as.factor(habnum)))+
@@ -334,7 +326,7 @@ return(Traits)})
 ```
 
 
-###plot values
+### plot values
 ```{r}
 
 plot_values_df_list <- 

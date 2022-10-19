@@ -7,7 +7,7 @@
 install_if <- function(x) {
   
   if(x %in% rownames(installed.packages()) == FALSE) {
-    message(paste(x, "is equired but not installed. Installing now"))
+    message(paste(x, "is required but not installed. Installing now"))
     Sys.sleep(1)
     install.packages(x)
     library(x)
@@ -25,7 +25,6 @@ install_if("ggpubr")
 install_if("gtools")
 install_if("broom")
 install_if("viridis")
-
 
 # make a folder to export analysis data
 if(! dir.exists(here("figures"))){
