@@ -76,17 +76,20 @@ Loading the data will throw 10 parsing failures caused by unexpected values in v
 Data <- read_tsv(url("https://ndownloader.figshare.com/files/22626299"))
 ```
 
-
+```{r}
+path1 <- here("figures/exp_setup.jpg")
+path2 <- here("figures/exp_plate_setup.jpg")
+```
 
 example of agar plate with bacterial colonies - each dot represents a unique species combination
 
-![example Plate](Plate_example.jpg)
+![example Plate](`r path1`)
 
 Each large plate has 1536 spots, corresponding to 12 replicated 96-Well plates with a control plate on every 4th position. 
 
 The position of the strain combinations on each 96-well plate is identical and as follows:
 
-![Strain positions](positions_96_plate.jpg)
+![Strain positions](`r path2`)
 
 We are interested in one response variables from the raw data:
 
@@ -388,7 +391,7 @@ lapply(ab_comb, function(x) { #for all levels of environmental richness (scale: 
        habnum = length(y), # what scale
        richness = Data_wide$Richness, 
        gene = Data_wide$gene,
-       functioning = rowMeans(Data_wide[,y]) #mean of functioning across habitats
+       functioning = rowMeans(Data_wide[,y])) #mean of functioning across habitats
   })
   })
 
