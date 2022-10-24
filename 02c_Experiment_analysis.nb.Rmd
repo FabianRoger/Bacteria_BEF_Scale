@@ -28,16 +28,6 @@ install_if("purrr")
 install_if("gridExtra")
 install_if("Hmisc")
 
-library(here)
-library(dplyr)
-library(tidyr)
-library(broom)
-library(forcats)
-library(readr)
-library(ggplot2)
-library(purrr)
-library(gridExtra)
-
 # load the plotting theme function
 source(here("function_plotting_theme.R"))
 ```
