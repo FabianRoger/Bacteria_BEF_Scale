@@ -9,12 +9,25 @@
 # For each, the file includes yield (e.g. yield_antibiotic1) and generation time (e.g. gentime_antibiotic1). 
 
 # Libraries
-library(dplyr)
-library(tidyr)
-library(readr)
-library(ggplot2)
-library(tibble)
-library(vegan)
+
+install_if <- function(x) {
+  
+  if(x %in% rownames(installed.packages()) == FALSE) {
+    message(paste(x, "is required but not installed. Installing now"))
+    Sys.sleep(1)
+    install.packages(x)
+    library(x)
+  } else{ 
+    library(x, character.only=TRUE)}
+}
+
+
+install_if("dplyr")
+install_if("tidyr")
+install_if("readr")
+install_if("ggplot2")
+install_if("tibble")
+install_if("vegan")
 
 
 
