@@ -507,10 +507,11 @@ Fig_2a_i <-
 ggplot(Results, aes(fill = metric, colour = metric))+
   geom_density(aes(x = slope, ..scaled..))+
   geom_vline(xintercept = 0, linetype = "dashed")+
-  geom_point(data = med_slope %>%  filter(slope_q == "median"), 
-           aes(x = slope, y = 0.1), colour = "white")+
   geom_errorbarh(data = quantile_res,
                  aes(xmax = high_q, xmin = low_q, y=0.1), colour = "white", height = 0)+ 
+  geom_point(data = med_slope %>%  filter(slope_q == "median"), 
+           aes(x = slope, y = 0.1), fill = "white", colour = "black", 
+           shape = 21, size = 0.8)+
   facet_wrap(~metric)+
   theme_meta()+
   theme(legend.position = "none", 
