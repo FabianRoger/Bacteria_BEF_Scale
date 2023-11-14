@@ -262,6 +262,32 @@ x1 <-
   theme(legend.position = "none") +
   theme_meta()
 
+# additional plot for the thesis defence
+xd <- 
+  ggplot(data = l.df,
+         mapping = aes(x = habitats, y = t.oy, colour = Experiment_ID)) +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  geom_smooth(method = "lm", se = FALSE, size = 0.5) +
+  geom_jitter(width = 0.1, shape = 1) +
+  ylab("Trangressive overyielding") +
+  xlab("Habitat heterogeneity") +
+  scale_colour_viridis_d(option = "C") +
+  theme(legend.position = "none") +
+  theme_meta() +
+  theme(
+    panel.background = element_rect(fill='transparent'), #transparent panel bg
+    plot.background = element_rect(fill='transparent', color=NA), #transparent plot bg
+    panel.grid.major = element_blank(), #remove major gridlines
+    panel.grid.minor = element_blank(), #remove minor gridlines
+    legend.background = element_rect(fill='transparent'), #transparent legend bg
+    legend.box.background = element_rect(fill='transparent') #transparent legend panel
+  )
+plot(xd)
+
+# export the figure for further modification
+ggsave(filename = "figures/def_fig_4.pdf", xd,
+       unit = "cm", width = 10, height = 8, bg="transparent")
+
 x2 <- 
   ggplot(data = l.est,
        mapping = aes(x = t.oy.est)) +
